@@ -31,6 +31,8 @@ Every command group and operation has focused help:
 godo --help
 godo init --help
 godo add --help
+godo source --help
+godo source search --help
 godo service --help
 godo service add --help
 godo db --help
@@ -91,6 +93,42 @@ Supported names map to:
 | `postgres` | `github.com/jackc/pgx/v5/stdlib` |
 
 `godo add` uses an explicit allowlist and does not accept arbitrary module paths.
+
+## Inspect godo source
+
+Print the directory of a godo package selected by the current project:
+
+```sh
+godo source http/plugins/apikey
+```
+
+Search all godo Go source for a case-sensitive literal string:
+
+```sh
+godo source search "func (plugin *Plugin) middleware"
+```
+
+Restrict the search to one package and include surrounding lines:
+
+```sh
+godo source search "func (plugin *Plugin) middleware" \
+  --package http/plugins/apikey \
+  --context 5
+```
+
+Both forms locate the nearest parent `go.mod` and ask the Go tool to resolve the
+exact `github.com/nathanpls/godo` source selected by that codebase. This follows
+the selected module version, workspace, and `replace` directives without making
+users locate or decode Go module-cache paths. The search runs dynamically on
+regular `.go` files in that resolved source tree. Without context it returns
+deterministic, module-relative `file:line:text` matches. Context output prints
+each path once as `[file]`, marks matching lines with `>`, and uses `...` between
+distant groups to avoid repeating paths in agent context. No match is successful
+and prints no output.
+
+Package arguments are relative to `github.com/nathanpls/godo`; use `.` for the
+module root. The command does not add or upgrade godo when the module is absent
+from the current build list.
 
 ## API keys
 

@@ -10,7 +10,7 @@ func TestCommandHelp(t *testing.T) {
 		arguments []string
 		contains  []string
 	}{
-		{[]string{"--help"}, []string{"godo makes", "init", "service", "db"}},
+		{[]string{"--help"}, []string{"godo makes", "init", "service", "db", "source"}},
 		{[]string{"init", "--help"}, []string{"godo init [directory]", "--module"}},
 		{[]string{"add", "--help"}, []string{"godo add <package>", "ratelimit", "postgres"}},
 		{[]string{"auth", "--help"}, []string{"Manage bearer API keys", "create", "revoke"}},
@@ -22,6 +22,8 @@ func TestCommandHelp(t *testing.T) {
 		{[]string{"db", "init", "--help"}, []string{"--dialect", "sqlite", "postgres"}},
 		{[]string{"db", "generate", "--help"}, []string{"schema.lock.json", "--empty"}},
 		{[]string{"db", "migrate", "--help"}, []string{"Apply all pending"}},
+		{[]string{"source", "--help"}, []string{"godo source <package>", "selected module version", "search"}},
+		{[]string{"source", "search", "--help"}, []string{"godo source search <query>", "--package", "--context", "groups lines"}},
 		{[]string{"agent", "--help"}, []string{"global OpenCode AGENTS.md"}},
 	}
 

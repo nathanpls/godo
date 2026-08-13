@@ -23,6 +23,9 @@ func TestUpdateAgentContent(t *testing.T) {
 	if !strings.Contains(added, "## godo CLI") || !strings.Contains(added, "`godo --help`") || !strings.Contains(added, "`godo <command> --help`") {
 		t.Fatalf("CLI discovery was not added to agent content:\n%s", added)
 	}
+	if !strings.Contains(added, "`godo source <package>`") || !strings.Contains(added, "`godo source search <query>") || !strings.Contains(added, "dynamically resolve") {
+		t.Fatalf("source search guidance was not added to agent content:\n%s", added)
+	}
 
 	updatedBlock := agentBlock([]service{{ID: 2, Name: "api", Port: 41001}})
 	updated, err := updateAgentContent(added, updatedBlock)

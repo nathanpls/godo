@@ -13,12 +13,13 @@ import (
 )
 
 type app struct {
-	store      store
-	supervisor supervisor
-	agentsFile string
-	stdout     io.Writer
-	cwd        string
-	goGet      func(string, string) error
+	store         store
+	supervisor    supervisor
+	agentsFile    string
+	stdout        io.Writer
+	cwd           string
+	goGet         func(string, string) error
+	resolveSource func(string, string) (sourceLocation, error)
 }
 
 func newApp() (*app, error) {
@@ -39,11 +40,12 @@ func newApp() (*app, error) {
 			configDir: filepath.Join(configDir, "godo"),
 			dataDir:   filepath.Join(dataDir, "godo"),
 		},
-		supervisor: systemdSupervisor{unitDir: filepath.Join(configDir, "systemd", "user")},
-		agentsFile: filepath.Join(configDir, "opencode", "AGENTS.md"),
-		stdout:     os.Stdout,
-		cwd:        cwd,
-		goGet:      runGoGet,
+		supervisor:    systemdSupervisor{unitDir: filepath.Join(configDir, "systemd", "user")},
+		agentsFile:    filepath.Join(configDir, "opencode", "AGENTS.md"),
+		stdout:        os.Stdout,
+		cwd:           cwd,
+		goGet:         runGoGet,
+		resolveSource: resolveGodoSource,
 	}, nil
 }
 
@@ -84,6 +86,8 @@ func (a *app) run(args []string) error {
 		return a.runService(args[1:])
 	case "db":
 		return a.runDB(args[1:])
+	case "source":
+		return a.runSource(args[1:])
 	case "agent":
 		if isHelp(args[1:]) {
 			return printHelp(a.stdout, agentHelp)

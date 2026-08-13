@@ -41,6 +41,17 @@ godo add http
 `godo add` runs `go get` for a known godo package or SQL driver without editing
 application source. Use `godo <command> --help` for command-specific guidance.
 
+Resolve or search the exact godo source selected by the current codebase:
+
+```sh
+godo source http/plugins/apikey
+godo source search "func (plugin *Plugin) middleware" \
+  --package http/plugins/apikey --context 5
+```
+
+The command follows the project's selected godo version, workspace, and local
+replacements instead of relying on a fixed module-cache path.
+
 On Linux, `godo` can build Go programs into persistent `systemd --user`
 services and publish their local URLs to OpenCode agents:
 

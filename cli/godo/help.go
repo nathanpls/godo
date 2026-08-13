@@ -16,6 +16,7 @@ Commands:
   auth       Manage project API keys
   service    Manage persistent local Go services
   db         Generate and run database migrations
+  source     Inspect the godo source selected by this project
   agent      Publish local services to the global AGENTS.md
 
 Run "godo <command> --help" for command-specific help.`
@@ -184,6 +185,33 @@ const dbStatusHelp = `Show pending, applied, modified, and missing migrations.
 
 Usage:
   godo db status`
+
+const sourceHelp = `Inspect the exact godo source selected by the current Go project.
+
+Usage:
+  godo source <package>
+  godo source search <query> [options]
+
+Commands:
+  search     Search godo source code for a literal string
+
+Arguments:
+  package    Package relative to github.com/nathanpls/godo; use . for the module root
+
+The package form prints its resolved source directory. Resolution follows the
+current project's selected module version, workspace, and replace directives.`
+
+const sourceSearchHelp = `Search the exact godo source selected by the current Go project.
+
+Usage:
+  godo source search <query> [--package <package>] [--context <lines>]
+
+Options:
+  --package <package>    Restrict the search to a godo package
+  --context <lines>      Show surrounding lines; defaults to 0
+
+The query is a case-sensitive literal string. Without context, results use
+module-relative file:line output. Context output groups lines under each file.`
 
 const agentHelp = `Synchronize managed local services with the global OpenCode AGENTS.md.
 
