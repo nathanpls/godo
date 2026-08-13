@@ -5,6 +5,7 @@ import (
 	"errors"
 	stdhttp "net/http"
 	"reflect"
+	"sync"
 )
 
 // Middleware wraps an HTTP handler.
@@ -31,24 +32,19 @@ type Router struct {
 	mux        *stdhttp.ServeMux
 	middleware []Middleware
 	handler    stdhttp.Handler
+	buildOnce  sync.Once
 }
 
 // New creates an empty Router.
 func New() *Router {
 	mux := stdhttp.NewServeMux()
-	return &Router{mux: mux, handler: mux}
+	return &Router{mux: mux}
 }
 
 // Use adds middleware in declaration order. The first middleware added is the
 // first to receive a request.
 func (r *Router) Use(middleware ...Middleware) {
 	r.middleware = append(r.middleware, middleware...)
-
-	var handler stdhttp.Handler = r.mux
-	for i := len(r.middleware) - 1; i >= 0; i-- {
-		handler = r.middleware[i](handler)
-	}
-	r.handler = handler
 }
 
 // Install adds a plugin to the router. Install plugins before serving requests.
@@ -133,6 +129,13 @@ func (r *Router) Trace(pattern string, handler stdhttp.HandlerFunc) {
 
 // ServeHTTP dispatches a request to the matching route.
 func (r *Router) ServeHTTP(w stdhttp.ResponseWriter, request *stdhttp.Request) {
+	r.buildOnce.Do(func() {
+		var handler stdhttp.Handler = r.mux
+		for i := len(r.middleware) - 1; i >= 0; i-- {
+			handler = r.middleware[i](handler)
+		}
+		r.handler = handler
+	})
 	r.handler.ServeHTTP(w, request)
 }
 

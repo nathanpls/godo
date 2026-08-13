@@ -77,6 +77,25 @@ func TestRouterMiddlewareOrder(t *testing.T) {
 	}
 }
 
+func TestMiddlewareConstructedOnce(t *testing.T) {
+	router := New()
+	constructions := 0
+	middleware := func(next stdhttp.Handler) stdhttp.Handler {
+		constructions++
+		return next
+	}
+	router.Use(middleware)
+	router.Use(func(next stdhttp.Handler) stdhttp.Handler { return next })
+	router.Get("/", func(stdhttp.ResponseWriter, *stdhttp.Request) {})
+
+	for range 2 {
+		router.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(stdhttp.MethodGet, "/", nil))
+	}
+	if constructions != 1 {
+		t.Fatalf("middleware constructed %d times, want 1", constructions)
+	}
+}
+
 func TestJSON(t *testing.T) {
 	response := httptest.NewRecorder()
 	if err := JSON(response, stdhttp.StatusCreated, map[string]string{"status": "created"}); err != nil {
