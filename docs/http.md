@@ -71,6 +71,36 @@ router.Use(logRequests)
 
 Register routes and middleware before serving requests.
 
+### Plugins
+
+Plugins configure middleware, routes, or related behavior through one validated
+installation step:
+
+```go
+if err := router.Install(plugin); err != nil {
+    log.Fatal(err)
+}
+```
+
+Implement a plugin with `Install(*http.Router) error`, or adapt a small function:
+
+```go
+plugin := godohttp.PluginFunc(func(router *godohttp.Router) error {
+    router.Use(middleware)
+    router.Get("/health", healthHandler)
+    return nil
+})
+```
+
+Use `Router.Use` for ordinary middleware and `Router.Install` for reusable
+packages that need configuration, validation, or route registration. Install
+plugins before the router serves its first request.
+
+Available plugins:
+
+- [Rate limiting](/http/plugins/ratelimit): memory or shared SQLite/PostgreSQL
+  fixed-window limits
+
 ### JSON
 
 `JSON` sets the response content type, writes the status, and encodes a value:

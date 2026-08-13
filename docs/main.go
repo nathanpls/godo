@@ -25,6 +25,7 @@ var pages = []page{
 	{Path: "/", Title: "godo", Markdown: readDoc("index.md")},
 	{Path: "/cli", Title: "CLI", Markdown: readDoc("cli.md")},
 	{Path: "/http", Title: "HTTP", Markdown: readDoc("http.md")},
+	{Path: "/http/plugins/ratelimit", Title: "Rate Limiting", Markdown: readDoc("http-ratelimit.md")},
 	{Path: "/orm", Title: "ORM", Markdown: readDoc("orm.md")},
 }
 
