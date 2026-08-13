@@ -2,6 +2,7 @@ package orm
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -43,6 +44,21 @@ func TestSQLiteNullAndOffsetSelect(t *testing.T) {
 	}
 	want := `SELECT "id", "account_id", "email", "data", "created_at", "nickname" FROM "test_users" WHERE "nickname" IS NULL LIMIT -1 OFFSET 10`
 	if query != want || len(arguments) != 0 {
+		t.Fatalf("query = %s, arguments = %#v", query, arguments)
+	}
+}
+
+func TestTypedNilSelect(t *testing.T) {
+	info, err := modelFor(testUser{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var nickname *string
+	query, arguments, err := selectSQL(PostgreSQL, info, []Option{Where("Nickname", Equal, nickname)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(query, `"nickname" IS NULL`) || len(arguments) != 0 {
 		t.Fatalf("query = %s, arguments = %#v", query, arguments)
 	}
 }

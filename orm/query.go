@@ -70,9 +70,22 @@ func Where(column string, operator Operator, value any) Option {
 		if !validOperator(operator) {
 			return fmt.Errorf("orm: invalid comparison operator %q", operator)
 		}
-		query.conditions = append(query.conditions, condition{column: column, operator: operator, value: value, null: value == nil})
+		query.conditions = append(query.conditions, condition{column: column, operator: operator, value: value, null: isNil(value)})
 		return nil
 	})
+}
+
+func isNil(value any) bool {
+	if value == nil {
+		return true
+	}
+	reflected := reflect.ValueOf(value)
+	switch reflected.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return reflected.IsNil()
+	default:
+		return false
+	}
 }
 
 // WhereIn adds an AND IN comparison.

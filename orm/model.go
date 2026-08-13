@@ -67,18 +67,19 @@ func modelForType(typeOf reflect.Type) (*modelInfo, error) {
 	}
 
 	info := &modelInfo{typ: typeOf, table: table, autoField: -1, byName: make(map[string]int)}
-	if err := collectFields(info, typeOf, nil); err != nil {
+	if err := collectFields(info, typeOf, nil, make(map[reflect.Type]bool)); err != nil {
 		return nil, err
 	}
 	if len(info.fields) == 0 {
 		return nil, fmt.Errorf("orm: model %s has no mapped fields", typeOf)
 	}
 	for i, field := range info.fields {
-		if _, exists := info.byName[field.column]; exists {
-			return nil, fmt.Errorf("orm: model %s maps multiple fields to column %q", typeOf, field.column)
+		for _, alias := range []string{field.column, field.goName} {
+			if existing, exists := info.byName[alias]; exists && existing != i {
+				return nil, fmt.Errorf("orm: model %s has ambiguous field or column name %q", typeOf, alias)
+			}
+			info.byName[alias] = i
 		}
-		info.byName[field.column] = i
-		info.byName[field.goName] = i
 		if field.primary {
 			info.primary = append(info.primary, i)
 		}
@@ -89,8 +90,8 @@ func modelForType(typeOf reflect.Type) (*modelInfo, error) {
 			if !field.primary {
 				return nil, fmt.Errorf("orm: auto field %s must also be primary", field.goName)
 			}
-			if !isInteger(indirectType(field.typ).Kind()) {
-				return nil, fmt.Errorf("orm: auto field %s must be an integer", field.goName)
+			if !validAutoType(field.typ) {
+				return nil, fmt.Errorf("orm: auto field %s must be int64 or uint64", field.goName)
 			}
 			info.autoField = i
 		}
@@ -103,7 +104,13 @@ func modelForType(typeOf reflect.Type) (*modelInfo, error) {
 	return actual.(*modelInfo), nil
 }
 
-func collectFields(info *modelInfo, typeOf reflect.Type, prefix []int) error {
+func collectFields(info *modelInfo, typeOf reflect.Type, prefix []int, active map[reflect.Type]bool) error {
+	if active[typeOf] {
+		return fmt.Errorf("orm: model %s has cyclic embedded fields", info.typ)
+	}
+	active[typeOf] = true
+	defer delete(active, typeOf)
+
 	for i := 0; i < typeOf.NumField(); i++ {
 		structField := typeOf.Field(i)
 		if !structField.IsExported() {
@@ -116,7 +123,7 @@ func collectFields(info *modelInfo, typeOf reflect.Type, prefix []int) error {
 			embeddedType = embeddedType.Elem()
 		}
 		if structField.Anonymous && embeddedType.Kind() == reflect.Struct && structField.Tag.Get("orm") == "" {
-			if err := collectFields(info, embeddedType, index); err != nil {
+			if err := collectFields(info, embeddedType, index, active); err != nil {
 				return err
 			}
 			continue
@@ -131,11 +138,16 @@ func collectFields(info *modelInfo, typeOf reflect.Type, prefix []int) error {
 		}
 		if field.column == "id" && structField.Name == "ID" && structField.Tag.Get("orm") == "" {
 			field.primary = true
-			field.auto = isInteger(indirectType(fieldType).Kind())
+			field.auto = validAutoType(fieldType)
 		}
 		info.fields = append(info.fields, field)
 	}
 	return nil
+}
+
+func validAutoType(value reflect.Type) bool {
+	value = indirectType(value)
+	return value.Kind() == reflect.Int64 || value.Kind() == reflect.Uint64
 }
 
 func parseField(structField reflect.StructField, index []int) (modelField, bool, error) {

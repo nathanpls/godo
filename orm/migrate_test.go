@@ -47,3 +47,21 @@ func TestCompositePrimaryKey(t *testing.T) {
 		t.Fatalf("migration does not contain a composite primary key: %s", statement)
 	}
 }
+
+func TestSQLiteNonAutoPrimaryKeyIsNotARowIDAlias(t *testing.T) {
+	type token struct {
+		ID int64 `orm:"primary"`
+	}
+	info, err := modelFor(token{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	statement, err := createTableSQL(SQLite, info)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `CREATE TABLE IF NOT EXISTS "tokens" ("id" BIGINT PRIMARY KEY NOT NULL)`
+	if statement != want {
+		t.Fatalf("migration = %s, want %s", statement, want)
+	}
+}

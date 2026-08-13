@@ -40,6 +40,9 @@ func createTableSQL(dialect Dialect, info *modelInfo) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		if dialect == SQLite && singlePrimary && field.primary && !field.auto && columnType == "INTEGER" {
+			columnType = "BIGINT"
+		}
 		definition := column + " " + columnType
 		if singlePrimary && field.primary {
 			definition += " PRIMARY KEY"
@@ -47,7 +50,7 @@ func createTableSQL(dialect Dialect, info *modelInfo) (string, error) {
 				definition += " AUTOINCREMENT"
 			}
 		}
-		if field.notNull && !(singlePrimary && field.primary) {
+		if field.notNull || dialect == SQLite && field.primary && !field.auto {
 			definition += " NOT NULL"
 		}
 		if field.unique {

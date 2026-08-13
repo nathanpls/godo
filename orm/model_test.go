@@ -87,4 +87,31 @@ func TestRejectsInvalidModelMetadata(t *testing.T) {
 	if _, err := modelFor(invalidAuto{}); err == nil {
 		t.Fatal("non-integer auto field was accepted")
 	}
+
+	type narrowAuto struct {
+		Key int32 `orm:"primary,auto"`
+	}
+	if _, err := modelFor(narrowAuto{}); err == nil {
+		t.Fatal("narrow auto field was accepted")
+	}
+}
+
+func TestRejectsCyclicEmbeddedModel(t *testing.T) {
+	type Node struct {
+		ID int64
+		*Node
+	}
+	if _, err := modelFor(Node{}); err == nil {
+		t.Fatal("cyclic embedded model was accepted")
+	}
+}
+
+func TestRejectsAmbiguousAliases(t *testing.T) {
+	type ambiguous struct {
+		First  string `orm:"Second"`
+		Second string `orm:"other"`
+	}
+	if _, err := modelFor(ambiguous{}); err == nil {
+		t.Fatal("ambiguous field and column aliases were accepted")
+	}
 }

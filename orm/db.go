@@ -102,6 +102,7 @@ func (db *DB) Transaction(ctx context.Context, options *sql.TxOptions, callback 
 	if err != nil {
 		return fmt.Errorf("orm: begin transaction: %w", err)
 	}
+	defer tx.Rollback()
 	txDB := &DB{sql: db.sql, runner: tx, dialect: db.dialect, inTx: true}
 	if err := callback(txDB); err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil && !errors.Is(rollbackErr, sql.ErrTxDone) {
