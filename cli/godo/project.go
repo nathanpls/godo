@@ -173,6 +173,22 @@ var dependencies = map[string]dependency{
 		path: "github.com/nathanpls/godo/orm",
 		docs: "http://localhost:41000/orm",
 	},
+	"id": {
+		path: "github.com/nathanpls/godo/id",
+		docs: "http://localhost:41000/id",
+	},
+	"lifecycle": {
+		path: "github.com/nathanpls/godo/lifecycle",
+		docs: "http://localhost:41000/lifecycle",
+	},
+	"password": {
+		path: "github.com/nathanpls/godo/password",
+		docs: "http://localhost:41000/password",
+	},
+	"validate": {
+		path: "github.com/nathanpls/godo/validate",
+		docs: "http://localhost:41000/validate",
+	},
 	"ratelimit": {
 		path: "github.com/nathanpls/godo/http/plugins/ratelimit",
 		docs: "http://localhost:41000/http/plugins/ratelimit",

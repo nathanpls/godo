@@ -1,12 +1,63 @@
 package http
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	stdhttp "net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 )
+
+func TestDecodeJSON(t *testing.T) {
+	type input struct {
+		Name string `json:"name"`
+	}
+	request := httptest.NewRequest(stdhttp.MethodPost, "/", bytes.NewBufferString(`{"name":"Gopher"}`))
+	request.Header.Set("Content-Type", "application/json; charset=utf-8")
+	var value input
+	if err := DecodeJSON(request, &value, 100); err != nil {
+		t.Fatal(err)
+	}
+	if value.Name != "Gopher" {
+		t.Fatalf("value = %+v", value)
+	}
+
+	tests := []struct {
+		contentType string
+		body        string
+		limit       int64
+		status      int
+	}{
+		{"text/plain", `{}`, 100, stdhttp.StatusUnsupportedMediaType},
+		{"application/json", `{"unknown":true}`, 100, stdhttp.StatusBadRequest},
+		{"application/json", `{} {}`, 100, stdhttp.StatusBadRequest},
+		{"application/json", `{"name":"too large"}`, 5, stdhttp.StatusRequestEntityTooLarge},
+		{"application/json", `{}` + strings.Repeat(" ", 20), 5, stdhttp.StatusRequestEntityTooLarge},
+	}
+	for _, test := range tests {
+		request := httptest.NewRequest(stdhttp.MethodPost, "/", bytes.NewBufferString(test.body))
+		request.Header.Set("Content-Type", test.contentType)
+		var value input
+		err := DecodeJSON(request, &value, test.limit)
+		var decode *DecodeError
+		if !errors.As(err, &decode) || decode.Status != test.status || decode.Problem().Status != test.status {
+			t.Fatalf("DecodeJSON(%q, %q) error = %#v", test.contentType, test.body, err)
+		}
+	}
+	request = httptest.NewRequest(stdhttp.MethodPost, "/", bytes.NewBufferString(`{}`))
+	request.Header.Set("Content-Type", "application/json")
+	if err := DecodeJSON(request, input{}, 100); err == nil {
+		t.Fatal("non-pointer destination was accepted")
+	} else {
+		var decode *DecodeError
+		if errors.As(err, &decode) {
+			t.Fatalf("programmer error was returned as client error: %v", err)
+		}
+	}
+}
 
 func TestWriteProblem(t *testing.T) {
 	response := httptest.NewRecorder()

@@ -7,10 +7,61 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
+	"mime"
 	stdhttp "net/http"
 	"net/url"
 	"strconv"
+	"strings"
 )
+
+// DecodeError is a client-safe JSON request decoding failure.
+type DecodeError struct {
+	Status int
+	Detail string
+	err    error
+}
+
+func (decode *DecodeError) Error() string { return decode.Detail }
+func (decode *DecodeError) Unwrap() error { return decode.err }
+
+// Problem returns an RFC 9457 response for the decoding failure.
+func (decode *DecodeError) Problem() Problem {
+	return Problem{Status: decode.Status, Detail: decode.Detail}
+}
+
+// DecodeJSON decodes one strict JSON request value. It rejects unsupported
+// media types, unknown object fields, trailing values, and bodies above
+// maxBytes.
+func DecodeJSON(request *stdhttp.Request, destination any, maxBytes int64) error {
+	if request == nil || request.Body == nil || destination == nil || maxBytes < 1 || maxBytes == math.MaxInt64 {
+		return errors.New("http: invalid JSON decoder configuration")
+	}
+	mediaType, _, err := mime.ParseMediaType(request.Header.Get("Content-Type"))
+	if err != nil || mediaType != "application/json" && !strings.HasSuffix(mediaType, "+json") {
+		return &DecodeError{Status: stdhttp.StatusUnsupportedMediaType, Detail: "Content-Type must be application/json"}
+	}
+	body, err := io.ReadAll(io.LimitReader(request.Body, maxBytes+1))
+	if err != nil {
+		return &DecodeError{Status: stdhttp.StatusBadRequest, Detail: "JSON request body could not be read", err: err}
+	}
+	if int64(len(body)) > maxBytes {
+		return &DecodeError{Status: stdhttp.StatusRequestEntityTooLarge, Detail: "JSON request body is too large"}
+	}
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(destination); err != nil {
+		var invalid *json.InvalidUnmarshalError
+		if errors.As(err, &invalid) {
+			return fmt.Errorf("http: invalid JSON destination: %w", err)
+		}
+		return &DecodeError{Status: stdhttp.StatusBadRequest, Detail: "JSON request body is invalid", err: err}
+	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
+		return &DecodeError{Status: stdhttp.StatusBadRequest, Detail: "JSON request body must contain one value", err: err}
+	}
+	return nil
+}
 
 // Problem is an RFC 9457 problem detail response. Extension values are written
 // as additional top-level members.

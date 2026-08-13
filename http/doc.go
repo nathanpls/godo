@@ -1,5 +1,5 @@
-// Package http provides a small HTTP router and WebSocket implementation built
-// on the Go standard library.
+// Package http provides routing, strict JSON requests, API responses, and
+// WebSockets built on the Go standard library.
 //
 // A Router accepts the standard net/http handler types, so applications can use
 // existing middleware and handlers without adapters. Route patterns use
