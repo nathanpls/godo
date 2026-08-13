@@ -23,6 +23,73 @@ The script builds and installs `godo` to `$HOME/.local/bin/godo`. Make sure
 `$HOME/.local/bin` is on `PATH`. Alternatively, use `go install ./cli/godo` and
 add the Go binary directory, normally `$HOME/go/bin`, to `PATH`.
 
+## Help
+
+Every command group and operation has focused help:
+
+```sh
+godo --help
+godo init --help
+godo add --help
+godo service --help
+godo service add --help
+godo db --help
+godo db generate --help
+```
+
+## Initialize a project
+
+Create a new minimal Go project:
+
+```sh
+godo init my-api
+```
+
+This creates `my-api/go.mod`, `my-api/main.go`, and `my-api/.gitignore`. The
+directory must be empty. The module path defaults to the directory name; provide
+an explicit publishable path when needed:
+
+```sh
+godo init my-api --module github.com/example/my-api
+```
+
+Initialize the current empty directory with:
+
+```sh
+godo init . --module github.com/example/my-api
+```
+
+The generated `main.go` contains only an empty `main` function. `godo init` does
+not silently choose an application architecture or add dependencies.
+
+## Add dependencies
+
+Add a known package to the current Go module without modifying source files:
+
+```sh
+godo add http
+godo add orm
+godo add ratelimit
+godo add sqlite
+godo add postgres
+```
+
+The command locates the nearest parent `go.mod`, runs `go get` from that module
+root, and prints the relevant local documentation URL. Database drivers also
+print the matching `godo db init` command.
+
+Supported names map to:
+
+| Name | Dependency |
+|---|---|
+| `http` | `github.com/nathanpls/godo/http` |
+| `orm` | `github.com/nathanpls/godo/orm` |
+| `ratelimit` | `github.com/nathanpls/godo/http/plugins/ratelimit` |
+| `sqlite` | `modernc.org/sqlite` |
+| `postgres` | `github.com/jackc/pgx/v5/stdlib` |
+
+`godo add` uses an explicit allowlist and does not accept arbitrary module paths.
+
 ## Add a service
 
 Pass a Go package directory, package path, or individual `.go` file:

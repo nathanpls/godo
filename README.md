@@ -27,6 +27,18 @@ Install the `godo` command:
 The script builds and installs `godo` to `$HOME/.local/bin/godo`. Alternatively,
 use `go install ./cli/godo`.
 
+Start a minimal project and add only the dependencies it needs:
+
+```sh
+godo init my-api --module github.com/example/my-api
+cd my-api
+godo add http
+```
+
+`godo init` creates `go.mod`, `main.go`, and `.gitignore` in an empty directory.
+`godo add` runs `go get` for a known godo package or SQL driver without editing
+application source. Use `godo <command> --help` for command-specific guidance.
+
 On Linux, `godo` can build Go programs into persistent `systemd --user`
 services and publish their local URLs to OpenCode agents:
 
