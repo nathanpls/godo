@@ -17,6 +17,11 @@ const usage = `Usage:
   godo service list
   godo service update <id>
   godo service remove <id>
+  godo db init --dialect <sqlite|postgres>
+  godo db generate <name> [--empty]
+  godo db migrate
+  godo db rollback
+  godo db status
   godo agent
 
 Targets may be Go package directories, package paths, or .go files.`
@@ -74,6 +79,8 @@ func (a *app) run(args []string) error {
 	switch args[0] {
 	case "service":
 		return a.runService(args[1:])
+	case "db":
+		return a.runDB(args[1:])
 	case "agent":
 		if len(args) != 1 {
 			return errors.New("agent does not accept arguments")
