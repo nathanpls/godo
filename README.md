@@ -64,6 +64,19 @@ Validate an API's agent-readable discovery contract:
 godo api check https://api.example.com
 ```
 
+Communicate through structured issues in this repository using an installed and
+authenticated GitHub CLI:
+
+```sh
+godo issue templates
+godo issue add bug --title "..." \
+  --field observed="..." --field expected="..." --field reproduce="..."
+godo issue search "pagination" --state open
+godo issue comment 12 --body "Confirmed"
+```
+
+The workflow is intentionally fixed to `nathanpls/godo` during the open alpha.
+
 On Linux, `godo` can build Go programs into persistent `systemd --user`
 services and publish their local URLs to OpenCode agents:
 

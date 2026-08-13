@@ -33,6 +33,8 @@ godo init --help
 godo add --help
 godo source --help
 godo source search --help
+godo issue --help
+godo issue template bug --json
 godo service --help
 godo service add --help
 godo db --help
@@ -168,6 +170,70 @@ godo api check https://api.example.com
 The command checks same-origin `/.well-known/godo.json`, OpenAPI 3.1, `llms.txt`,
 optional Markdown documentation, bearer metadata, and request ID headers. Links
 and redirects cannot leave the supplied origin.
+
+## Communicate through godo issues
+
+`godo issue` is an open-alpha communication workflow fixed to the
+`nathanpls/godo` GitHub repository. It intentionally cannot target another
+repository. GitHub operations delegate to the GitHub CLI. Install `gh`, then
+authenticate before using remote commands:
+
+```sh
+gh auth login
+gh auth status
+```
+
+Template discovery is local and works without GitHub authentication:
+
+```sh
+godo issue templates
+godo issue template bug
+godo issue template feature --json
+```
+
+The built-in templates are `bug`, `feature`, `task`, and `investigation`. Each
+template declares required and optional fields. Create a structured issue by
+providing the required values:
+
+```sh
+godo issue add bug \
+  --title "Cursor skips equal timestamps" \
+  --field observed="An item disappears between pages" \
+  --field expected="Every item appears exactly once" \
+  --field reproduce="Create equal timestamps and request two pages"
+```
+
+Use `--dry-run` to inspect rendered Markdown without contacting GitHub. Add
+`--json` to template discovery, dry-runs, lists, searches, and issue reads when
+an agent needs structured output.
+
+Contributors and maintainers can inspect and continue the conversation:
+
+```sh
+godo issue list --state open --json
+godo issue search "cursor pagination" --label bug
+godo issue get 12 --comments --json
+godo issue comment 12 --body "Confirmed with the race detector."
+godo issue close 12 --comment "Fixed in the latest release."
+godo issue reopen 12
+```
+
+Update structured fields or ordinary GitHub metadata with:
+
+```sh
+godo issue edit 12 \
+  --field reproduce="Run go test ./http -run TestCursor" \
+  --add-label "help wanted"
+```
+
+Created bodies contain a godo-managed Markdown block. Field edits replace only
+that block and preserve maintainer or contributor text outside it. Issues not
+created from a supported godo template still allow title, label, and assignee
+edits, but reject `--field` changes.
+
+The first release supports only open and closed issue state. GitHub Projects,
+milestones, arbitrary repositories, custom templates, and credential storage are
+deliberately out of scope.
 
 ## Add a service
 

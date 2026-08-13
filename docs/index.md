@@ -6,7 +6,7 @@ possible.
 
 ## Packages
 
-- [CLI](/cli): persistent local Go services and agent discovery
+- [CLI](/cli): project workflows, godo issue communication, services, and agent discovery
 - [HTTP](/http): routing, middleware, JSON responses, and WebSockets
 - [HTTP API Keys](/http/plugins/apikey): bearer authentication and key management
 - [Agent API](/http/plugins/agentapi): discovery, OpenAPI, and llms.txt
