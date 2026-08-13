@@ -70,6 +70,7 @@ Add a known package to the current Go module without modifying source files:
 godo add http
 godo add orm
 godo add ratelimit
+godo add apikey
 godo add sqlite
 godo add postgres
 ```
@@ -85,10 +86,32 @@ Supported names map to:
 | `http` | `github.com/nathanpls/godo/http` |
 | `orm` | `github.com/nathanpls/godo/orm` |
 | `ratelimit` | `github.com/nathanpls/godo/http/plugins/ratelimit` |
+| `apikey` | `github.com/nathanpls/godo/http/plugins/apikey` |
 | `sqlite` | `modernc.org/sqlite` |
 | `postgres` | `github.com/jackc/pgx/v5/stdlib` |
 
 `godo add` uses an explicit allowlist and does not accept arbitrary module paths.
+
+## API keys
+
+Initialize project-local API key storage:
+
+```sh
+godo auth init
+```
+
+Create, list, and revoke keys:
+
+```sh
+godo auth create --name opencode
+godo auth list
+godo auth revoke 1
+```
+
+Secrets are displayed once and only SHA-256 hashes are stored in the ignored
+`.godo/auth.json` file. Key changes take effect without restarting applications
+using the API key plugin. See the [API key documentation](/http/plugins/apikey)
+for installation, request identity, and custom responses.
 
 ## Add a service
 

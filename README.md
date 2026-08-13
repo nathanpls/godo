@@ -13,6 +13,8 @@ Each area lives in a focused top-level package and remains usable independently.
   and WebSockets.
 - [`godo/http/plugins/ratelimit`](./http/plugins/ratelimit): fixed-window request
   limits using memory, SQLite, or PostgreSQL.
+- [`godo/http/plugins/apikey`](./http/plugins/apikey): hashed bearer API keys
+  managed through the `godo` CLI.
 - [`godo/orm`](./orm): driver-neutral SQLite and PostgreSQL models, migrations,
   CRUD, queries, and transactions.
 

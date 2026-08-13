@@ -98,6 +98,8 @@ plugins before the router serves its first request.
 
 Available plugins:
 
+- [API key authentication](/http/plugins/apikey): hashed bearer keys managed by
+  the godo CLI
 - [Rate limiting](/http/plugins/ratelimit): memory or shared SQLite/PostgreSQL
   fixed-window limits
 
