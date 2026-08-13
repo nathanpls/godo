@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nathanpls/godo/http/plugins/agentapi"
+	"github.com/nathanpls/godo/core/http/plugins/agentapi"
 )
 
 const maxAPICheckBody = 4 << 20

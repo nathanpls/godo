@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	godohttp "github.com/nathanpls/godo/http"
+	godohttp "github.com/nathanpls/godo/core/http"
 )
 
 //go:embed *.md
@@ -24,6 +24,7 @@ type page struct {
 var pages = []page{
 	{Path: "/", Title: "godo", Markdown: readDoc("index.md")},
 	{Path: "/cli", Title: "CLI", Markdown: readDoc("cli.md")},
+	{Path: "/discord", Title: "Discord", Markdown: readDoc("discord.md")},
 	{Path: "/http", Title: "HTTP", Markdown: readDoc("http.md")},
 	{Path: "/http/plugins/apikey", Title: "API Keys", Markdown: readDoc("http-apikey.md")},
 	{Path: "/http/plugins/agentapi", Title: "Agent API", Markdown: readDoc("http-agentapi.md")},

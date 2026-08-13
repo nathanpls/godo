@@ -11,8 +11,8 @@ func TestCommandHelp(t *testing.T) {
 		contains  []string
 	}{
 		{[]string{"--help"}, []string{"godo makes", "init", "service", "db", "source", "issue"}},
-		{[]string{"init", "--help"}, []string{"godo init [directory]", "--module"}},
-		{[]string{"add", "--help"}, []string{"godo add <package>", "ratelimit", "postgres"}},
+		{[]string{"init", "--help"}, []string{"godo init [directory]", "--module", "--template", "discord"}},
+		{[]string{"add", "--help"}, []string{"godo add <package>", "discord", "ratelimit", "postgres"}},
 		{[]string{"auth", "--help"}, []string{"Manage bearer API keys", "create", "revoke"}},
 		{[]string{"auth", "create", "--help"}, []string{"--name", "displayed once"}},
 		{[]string{"api", "--help"}, []string{"agent discovery", "check"}},

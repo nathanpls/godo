@@ -38,6 +38,27 @@ func TestInitProjectInfersModule(t *testing.T) {
 	assertFileContains(t, filepath.Join(root, "service", "go.mod"), "module service\n")
 }
 
+func TestInitDiscordProject(t *testing.T) {
+	root := t.TempDir()
+	var output strings.Builder
+	application := &app{cwd: root, stdout: &output}
+	options, err := parseProjectInit([]string{"bot", "--template", "discord"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := application.initProject(options); err != nil {
+		t.Fatal(err)
+	}
+
+	project := filepath.Join(root, "bot")
+	assertFileContains(t, filepath.Join(project, "main.go"), "discord.New")
+	assertFileContains(t, filepath.Join(project, "main.go"), "signal.NotifyContext")
+	assertFileContains(t, filepath.Join(project, ".env.example"), "DISCORD_BOT_TOKEN=")
+	if !strings.Contains(output.String(), "godo add discord") {
+		t.Fatalf("output = %q", output.String())
+	}
+}
+
 func TestInitProjectRejectsNonEmptyDirectory(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "existing.txt"), "keep")
@@ -61,11 +82,11 @@ func TestInitProjectValidatesBeforeCreatingDirectory(t *testing.T) {
 }
 
 func TestParseProjectInit(t *testing.T) {
-	options, err := parseProjectInit([]string{".", "--module=example.com/app"})
+	options, err := parseProjectInit([]string{".", "--module=example.com/app", "--template=discord"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if options.directory != "." || options.module != "example.com/app" {
+	if options.directory != "." || options.module != "example.com/app" || options.template != "discord" {
 		t.Fatalf("options = %+v", options)
 	}
 	if _, err := parseProjectInit([]string{".", "other"}); err == nil {
@@ -73,6 +94,9 @@ func TestParseProjectInit(t *testing.T) {
 	}
 	if _, err := parseProjectInit([]string{"app", "--module", "bad path"}); err != nil {
 		t.Fatalf("module path is validated during initialization, not parsing: %v", err)
+	}
+	if _, err := parseProjectInit([]string{"app", "--template", "unknown"}); err == nil {
+		t.Fatal("unknown project template was accepted")
 	}
 }
 
@@ -95,7 +119,7 @@ func TestAddDependency(t *testing.T) {
 	if err := application.addDependency([]string{"ratelimit"}); err != nil {
 		t.Fatal(err)
 	}
-	if gotRoot != root || gotDependency != "github.com/nathanpls/godo/http/plugins/ratelimit" {
+	if gotRoot != root || gotDependency != "github.com/nathanpls/godo/core/http/plugins/ratelimit" {
 		t.Fatalf("go get = %q in %q", gotDependency, gotRoot)
 	}
 	if !strings.Contains(output.String(), "http://localhost:41000/http/plugins/ratelimit") {
@@ -121,9 +145,9 @@ func TestAddDependencyError(t *testing.T) {
 
 func TestAgentHTTPDependenciesAreRegistered(t *testing.T) {
 	for name, path := range map[string]string{
-		"agentapi":    "github.com/nathanpls/godo/http/plugins/agentapi",
-		"idempotency": "github.com/nathanpls/godo/http/plugins/idempotency",
-		"requestid":   "github.com/nathanpls/godo/http/plugins/requestid",
+		"agentapi":    "github.com/nathanpls/godo/core/http/plugins/agentapi",
+		"idempotency": "github.com/nathanpls/godo/core/http/plugins/idempotency",
+		"requestid":   "github.com/nathanpls/godo/core/http/plugins/requestid",
 	} {
 		if dependencies[name].path != path {
 			t.Fatalf("dependency %q = %q", name, dependencies[name].path)
@@ -133,14 +157,20 @@ func TestAgentHTTPDependenciesAreRegistered(t *testing.T) {
 
 func TestProductionDependenciesAreRegistered(t *testing.T) {
 	for name, path := range map[string]string{
-		"id":        "github.com/nathanpls/godo/id",
-		"lifecycle": "github.com/nathanpls/godo/lifecycle",
-		"password":  "github.com/nathanpls/godo/password",
-		"validate":  "github.com/nathanpls/godo/validate",
+		"id":        "github.com/nathanpls/godo/core/id",
+		"lifecycle": "github.com/nathanpls/godo/core/lifecycle",
+		"password":  "github.com/nathanpls/godo/core/password",
+		"validate":  "github.com/nathanpls/godo/core/validate",
 	} {
 		if dependencies[name].path != path {
 			t.Fatalf("dependency %q = %q", name, dependencies[name].path)
 		}
+	}
+}
+
+func TestDiscordDependencyIsRegistered(t *testing.T) {
+	if dependencies["discord"].path != "github.com/nathanpls/godo/channels/discord" {
+		t.Fatalf("discord dependency = %q", dependencies["discord"].path)
 	}
 }
 

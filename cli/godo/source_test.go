@@ -8,11 +8,11 @@ import (
 )
 
 func TestParseSourceSearch(t *testing.T) {
-	options, err := parseSourceSearch([]string{"needle", "--package=http/plugins/apikey", "--context", "5"})
+	options, err := parseSourceSearch([]string{"needle", "--package=core/http/plugins/apikey", "--context", "5"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if options.query != "needle" || options.packagePath != "http/plugins/apikey" || options.context != 5 {
+	if options.query != "needle" || options.packagePath != "core/http/plugins/apikey" || options.context != 5 {
 		t.Fatalf("options = %+v", options)
 	}
 
@@ -41,7 +41,7 @@ func TestSourceCommands(t *testing.T) {
 	}
 
 	source := t.TempDir()
-	packageDir := filepath.Join(source, "http", "plugins", "apikey")
+	packageDir := filepath.Join(source, "core", "http", "plugins", "apikey")
 	if err := os.MkdirAll(packageDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -62,18 +62,18 @@ func TestSourceCommands(t *testing.T) {
 		},
 	}
 
-	if err := application.run([]string{"source", "http/plugins/apikey"}); err != nil {
+	if err := application.run([]string{"source", "core/http/plugins/apikey"}); err != nil {
 		t.Fatal(err)
 	}
-	if resolvedPackage != "http/plugins/apikey" || output.String() != packageDir+"\n" {
+	if resolvedPackage != "core/http/plugins/apikey" || output.String() != packageDir+"\n" {
 		t.Fatalf("resolved package = %q, output = %q", resolvedPackage, output.String())
 	}
 
 	output.Reset()
-	if err := application.run([]string{"source", "search", "needle", "--package", "http/plugins/apikey", "--context=1"}); err != nil {
+	if err := application.run([]string{"source", "search", "needle", "--package", "core/http/plugins/apikey", "--context=1"}); err != nil {
 		t.Fatal(err)
 	}
-	want := "[http/plugins/apikey/plugin.go]\n" +
+	want := "[core/http/plugins/apikey/plugin.go]\n" +
 		"  2 before one\n" +
 		"> 3 needle one\n" +
 		"  4 after one\n" +
@@ -130,17 +130,17 @@ func TestResolveGodoSourceUsesProjectReplacement(t *testing.T) {
 	}
 	writeTestFile(t, filepath.Join(project, "go.mod"), "module example.com/app\n\ngo 1.26.0\n\nrequire github.com/nathanpls/godo v0.0.0\n\nreplace github.com/nathanpls/godo => "+repository+"\n")
 
-	location, err := resolveGodoSource(project, "http/plugins/apikey")
+	location, err := resolveGodoSource(project, "core/http/plugins/apikey")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if location.moduleDir != repository || location.targetDir != filepath.Join(repository, "http", "plugins", "apikey") {
+	if location.moduleDir != repository || location.targetDir != filepath.Join(repository, "core", "http", "plugins", "apikey") {
 		t.Fatalf("location = %+v", location)
 	}
 }
 
 func TestValidateSourcePackage(t *testing.T) {
-	valid := []string{".", "http", "http/plugins/apikey"}
+	valid := []string{".", "core/http", "core/http/plugins/apikey", "channels/discord"}
 	for _, packagePath := range valid {
 		if err := validateSourcePackage(packagePath); err != nil {
 			t.Fatalf("valid package %q: %v", packagePath, err)

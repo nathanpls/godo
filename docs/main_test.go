@@ -40,6 +40,16 @@ func TestDocsServeCLIPage(t *testing.T) {
 	}
 }
 
+func TestDocsServeDiscordPage(t *testing.T) {
+	request := httptest.NewRequest(http.MethodGet, "/discord", nil)
+	request.Header.Set("Accept", "text/markdown")
+	response := httptest.NewRecorder()
+	docsHandler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK || !strings.HasPrefix(response.Body.String(), "# Discord\n") {
+		t.Fatalf("Discord docs returned %d %q", response.Code, response.Body.String())
+	}
+}
+
 func TestDocsServeORMPage(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/orm", nil)
 	request.Header.Set("Accept", "text/markdown")

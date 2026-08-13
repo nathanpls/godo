@@ -14,14 +14,14 @@ import (
 	"syscall"
 	"unicode"
 
-	"github.com/nathanpls/godo/orm"
+	"github.com/nathanpls/godo/core/orm"
 )
 
 const schemaProgramSQLite = `package main
 
 import (
-	"github.com/nathanpls/godo/orm"
-	"github.com/nathanpls/godo/orm/dbtool"
+	"github.com/nathanpls/godo/core/orm"
+	"github.com/nathanpls/godo/core/orm/dbtool"
 
 	_ "modernc.org/sqlite"
 
@@ -43,8 +43,8 @@ func main() {
 const schemaProgramPostgres = `package main
 
 import (
-	"github.com/nathanpls/godo/orm"
-	"github.com/nathanpls/godo/orm/dbtool"
+	"github.com/nathanpls/godo/core/orm"
+	"github.com/nathanpls/godo/core/orm/dbtool"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 

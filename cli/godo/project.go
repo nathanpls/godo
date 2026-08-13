@@ -14,6 +14,51 @@ const projectMain = `package main
 func main() {}
 `
 
+const discordProjectMain = `package main
+
+import (
+	"context"
+	"errors"
+	"log"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+
+	"github.com/nathanpls/godo/channels/discord"
+)
+
+func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	bot, err := discord.New(discord.Config{
+		Token: os.Getenv("DISCORD_BOT_TOKEN"),
+		Intents: discord.IntentsGuilds |
+			discord.IntentsGuildMessages |
+			discord.IntentsMessageContent,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := bot.OnMessage(func(ctx context.Context, event *discord.MessageEvent) error {
+		if strings.EqualFold(event.Message.Content, "ping") {
+			return event.Reply(ctx, discord.MessageCreate{Content: "pong"})
+		}
+		return nil
+	}); err != nil {
+		log.Fatal(err)
+	}
+	if err := bot.Run(ctx); err != nil && !errors.Is(err, context.Canceled) {
+		log.Fatal(err)
+	}
+}
+`
+
+const discordProjectEnv = `# Create a bot at https://discord.com/developers/applications
+DISCORD_BOT_TOKEN=
+`
+
 const projectGitignore = `# Go build and test output
 bin/
 *.out
@@ -26,6 +71,7 @@ bin/
 type projectInitOptions struct {
 	directory string
 	module    string
+	template  string
 }
 
 func parseProjectInit(arguments []string) (projectInitOptions, error) {
@@ -34,16 +80,20 @@ func parseProjectInit(arguments []string) (projectInitOptions, error) {
 	for i := 0; i < len(arguments); i++ {
 		argument := arguments[i]
 		name, inline, hasInline := strings.Cut(argument, "=")
-		if name == "--module" {
+		if name == "--module" || name == "--template" {
 			value := inline
 			if !hasInline {
 				i++
 				if i >= len(arguments) {
-					return projectInitOptions{}, errors.New("--module requires a value")
+					return projectInitOptions{}, fmt.Errorf("%s requires a value", name)
 				}
 				value = arguments[i]
 			}
-			options.module = value
+			if name == "--module" {
+				options.module = value
+			} else {
+				options.template = value
+			}
 			continue
 		}
 		if strings.HasPrefix(argument, "-") {
@@ -60,6 +110,9 @@ func parseProjectInit(arguments []string) (projectInitOptions, error) {
 	}
 	if strings.ContainsAny(options.module, "\r\n") {
 		return projectInitOptions{}, errors.New("module path must not contain newlines")
+	}
+	if options.template != "" && options.template != "discord" {
+		return projectInitOptions{}, fmt.Errorf("unknown project template %q", options.template)
 	}
 	return options, nil
 }
@@ -99,13 +152,21 @@ func (a *app) initProject(options projectInitOptions) error {
 		return fmt.Errorf("project directory %s is not empty", target)
 	}
 
+	mainFile := projectMain
 	files := []struct {
 		name    string
 		content string
 	}{
 		{"go.mod", "module " + module + "\n\ngo 1.26.0\n"},
-		{"main.go", projectMain},
+		{"main.go", mainFile},
 		{".gitignore", projectGitignore},
+	}
+	if options.template == "discord" {
+		files[1].content = discordProjectMain
+		files = append(files, struct {
+			name    string
+			content string
+		}{".env.example", discordProjectEnv})
 	}
 	created := make([]string, 0, len(files))
 	for _, file := range files {
@@ -124,7 +185,12 @@ func (a *app) initProject(options projectInitOptions) error {
 
 	fmt.Fprintf(a.stdout, "Initialized Go project %s in %s\n", module, target)
 	fmt.Fprintln(a.stdout, "Next:")
-	fmt.Fprintln(a.stdout, "  godo add http")
+	if options.template == "discord" {
+		fmt.Fprintln(a.stdout, "  godo add discord")
+		fmt.Fprintln(a.stdout, "  Set DISCORD_BOT_TOKEN, enable Message Content Intent, and run go run .")
+	} else {
+		fmt.Fprintln(a.stdout, "  godo add http")
+	}
 	return nil
 }
 
@@ -165,48 +231,52 @@ type dependency struct {
 }
 
 var dependencies = map[string]dependency{
+	"discord": {
+		path: "github.com/nathanpls/godo/channels/discord",
+		docs: "http://localhost:41000/discord",
+	},
 	"http": {
-		path: "github.com/nathanpls/godo/http",
+		path: "github.com/nathanpls/godo/core/http",
 		docs: "http://localhost:41000/http",
 	},
 	"orm": {
-		path: "github.com/nathanpls/godo/orm",
+		path: "github.com/nathanpls/godo/core/orm",
 		docs: "http://localhost:41000/orm",
 	},
 	"id": {
-		path: "github.com/nathanpls/godo/id",
+		path: "github.com/nathanpls/godo/core/id",
 		docs: "http://localhost:41000/id",
 	},
 	"lifecycle": {
-		path: "github.com/nathanpls/godo/lifecycle",
+		path: "github.com/nathanpls/godo/core/lifecycle",
 		docs: "http://localhost:41000/lifecycle",
 	},
 	"password": {
-		path: "github.com/nathanpls/godo/password",
+		path: "github.com/nathanpls/godo/core/password",
 		docs: "http://localhost:41000/password",
 	},
 	"validate": {
-		path: "github.com/nathanpls/godo/validate",
+		path: "github.com/nathanpls/godo/core/validate",
 		docs: "http://localhost:41000/validate",
 	},
 	"ratelimit": {
-		path: "github.com/nathanpls/godo/http/plugins/ratelimit",
+		path: "github.com/nathanpls/godo/core/http/plugins/ratelimit",
 		docs: "http://localhost:41000/http/plugins/ratelimit",
 	},
 	"apikey": {
-		path: "github.com/nathanpls/godo/http/plugins/apikey",
+		path: "github.com/nathanpls/godo/core/http/plugins/apikey",
 		docs: "http://localhost:41000/http/plugins/apikey",
 	},
 	"agentapi": {
-		path: "github.com/nathanpls/godo/http/plugins/agentapi",
+		path: "github.com/nathanpls/godo/core/http/plugins/agentapi",
 		docs: "http://localhost:41000/http/plugins/agentapi",
 	},
 	"idempotency": {
-		path: "github.com/nathanpls/godo/http/plugins/idempotency",
+		path: "github.com/nathanpls/godo/core/http/plugins/idempotency",
 		docs: "http://localhost:41000/http/plugins/idempotency",
 	},
 	"requestid": {
-		path: "github.com/nathanpls/godo/http/plugins/requestid",
+		path: "github.com/nathanpls/godo/core/http/plugins/requestid",
 		docs: "http://localhost:41000/http/plugins/requestid",
 	},
 	"sqlite": {

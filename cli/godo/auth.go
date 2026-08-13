@@ -9,7 +9,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/nathanpls/godo/http/plugins/apikey"
+	"github.com/nathanpls/godo/core/http/plugins/apikey"
 )
 
 const authGitignore = `*

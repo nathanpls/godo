@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nathanpls/godo/orm"
+	"github.com/nathanpls/godo/core/orm"
 )
 
 func TestParseDBInit(t *testing.T) {
@@ -77,8 +77,8 @@ func TestGenerateEmptyMigration(t *testing.T) {
 	writeTestFile(t, filepath.Join(directory, "db", "godo", "main.go"), `package main
 
 import (
-	"github.com/nathanpls/godo/orm"
-	"github.com/nathanpls/godo/orm/dbtool"
+	"github.com/nathanpls/godo/core/orm"
+	"github.com/nathanpls/godo/core/orm/dbtool"
 )
 
 func main() {
@@ -122,8 +122,8 @@ func TestGenerateModelMigration(t *testing.T) {
 	writeTestFile(t, filepath.Join(directory, "db", "godo", "main.go"), `package main
 
 import (
-	"github.com/nathanpls/godo/orm"
-	"github.com/nathanpls/godo/orm/dbtool"
+	"github.com/nathanpls/godo/core/orm"
+	"github.com/nathanpls/godo/core/orm/dbtool"
 )
 
 type User struct {

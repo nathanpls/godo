@@ -23,18 +23,19 @@ Commands:
 
 Run "godo <command> --help" for command-specific help.`
 
-const initHelp = `Initialize a minimal Go project without adding dependencies.
+const initHelp = `Initialize a Go project without adding dependencies.
 
 Usage:
-  godo init [directory] [--module <path>]
+  godo init [directory] [--module <path>] [--template <name>]
 
 Arguments:
   directory           Target directory; defaults to the current directory
 
 Options:
   --module <path>     Go module path; defaults to the target directory name
+  --template <name>   Optional application template: discord
 
-The target must be empty. The command creates go.mod, main.go, and .gitignore.`
+The target must be empty. The discord template adds a configurable bot starter.`
 
 const addHelp = `Add a known package to the current Go module without editing source files.
 
@@ -42,17 +43,18 @@ Usage:
   godo add <package>
 
 Packages:
-  http        github.com/nathanpls/godo/http
-  orm         github.com/nathanpls/godo/orm
-  id          github.com/nathanpls/godo/id
-  lifecycle   github.com/nathanpls/godo/lifecycle
-  password    github.com/nathanpls/godo/password
-  validate    github.com/nathanpls/godo/validate
-  ratelimit   github.com/nathanpls/godo/http/plugins/ratelimit
-  apikey      github.com/nathanpls/godo/http/plugins/apikey
-  agentapi    github.com/nathanpls/godo/http/plugins/agentapi
-  idempotency github.com/nathanpls/godo/http/plugins/idempotency
-  requestid   github.com/nathanpls/godo/http/plugins/requestid
+  discord     github.com/nathanpls/godo/channels/discord
+  http        github.com/nathanpls/godo/core/http
+  orm         github.com/nathanpls/godo/core/orm
+  id          github.com/nathanpls/godo/core/id
+  lifecycle   github.com/nathanpls/godo/core/lifecycle
+  password    github.com/nathanpls/godo/core/password
+  validate    github.com/nathanpls/godo/core/validate
+  ratelimit   github.com/nathanpls/godo/core/http/plugins/ratelimit
+  apikey      github.com/nathanpls/godo/core/http/plugins/apikey
+  agentapi    github.com/nathanpls/godo/core/http/plugins/agentapi
+  idempotency github.com/nathanpls/godo/core/http/plugins/idempotency
+  requestid   github.com/nathanpls/godo/core/http/plugins/requestid
   sqlite      modernc.org/sqlite
   postgres    github.com/jackc/pgx/v5/stdlib
 
@@ -310,7 +312,7 @@ Commands:
   search     Search godo source code for a literal string
 
 Arguments:
-  package    Package relative to github.com/nathanpls/godo; use . for the module root
+  package    Package relative to github.com/nathanpls/godo; for example core/http
 
 The package form prints its resolved source directory. Resolution follows the
 current project's selected module version, workspace, and replace directives.`
@@ -321,7 +323,7 @@ Usage:
   godo source search <query> [--package <package>] [--context <lines>]
 
 Options:
-  --package <package>    Restrict the search to a godo package
+  --package <package>    Restrict the search to a godo package, such as channels/discord
   --context <lines>      Show surrounding lines; defaults to 0
 
 The query is a case-sensitive literal string. Without context, results use
