@@ -45,3 +45,12 @@ go fmt ./...
 go vet ./...
 go test ./...
 ```
+
+Serve the package documentation locally:
+
+```sh
+go run ./docs
+```
+
+Documentation routes return HTML to browsers and canonical Markdown to agents
+that send `Accept: text/markdown`.
