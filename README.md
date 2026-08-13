@@ -9,8 +9,8 @@ Each area lives in a focused top-level package and remains usable independently.
 
 ## Packages
 
-- [`godo/http`](./http): method-aware HTTP routing, middleware, and JSON
-  responses.
+- [`godo/http`](./http): method-aware HTTP routing, middleware, JSON responses,
+  and WebSockets.
 
 ## Principles
 

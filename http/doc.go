@@ -12,4 +12,19 @@
 //	})
 //
 //	stdhttp.ListenAndServe(":8080", router)
+//
+// WebSocket routes perform the handshake and close the connection when the
+// handler returns:
+//
+//	router.WebSocket("/events", func(conn *http.Conn, r *stdhttp.Request) {
+//		for {
+//			messageType, message, err := conn.ReadMessage()
+//			if err != nil {
+//				return
+//			}
+//			if err := conn.WriteMessage(messageType, message); err != nil {
+//				return
+//			}
+//		}
+//	})
 package http
