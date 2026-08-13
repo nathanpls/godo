@@ -177,6 +177,10 @@ var dependencies = map[string]dependency{
 		path: "github.com/nathanpls/godo/http/plugins/ratelimit",
 		docs: "http://localhost:41000/http/plugins/ratelimit",
 	},
+	"apikey": {
+		path: "github.com/nathanpls/godo/http/plugins/apikey",
+		docs: "http://localhost:41000/http/plugins/apikey",
+	},
 	"sqlite": {
 		path: "modernc.org/sqlite",
 		docs: "http://localhost:41000/orm",

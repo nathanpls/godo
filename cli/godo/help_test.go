@@ -13,6 +13,8 @@ func TestCommandHelp(t *testing.T) {
 		{[]string{"--help"}, []string{"godo makes", "init", "service", "db"}},
 		{[]string{"init", "--help"}, []string{"godo init [directory]", "--module"}},
 		{[]string{"add", "--help"}, []string{"godo add <package>", "ratelimit", "postgres"}},
+		{[]string{"auth", "--help"}, []string{"Manage bearer API keys", "create", "revoke"}},
+		{[]string{"auth", "create", "--help"}, []string{"--name", "displayed once"}},
 		{[]string{"service", "--help"}, []string{"Manage persistent", "update", "remove"}},
 		{[]string{"service", "add", "--help"}, []string{"godo service add", "--additions"}},
 		{[]string{"db", "--help"}, []string{"Generate and run", "generate", "rollback"}},

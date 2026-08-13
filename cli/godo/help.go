@@ -13,6 +13,7 @@ Usage:
 Commands:
   init       Initialize a minimal Go project
   add        Add a known godo package or database driver
+  auth       Manage project API keys
   service    Manage persistent local Go services
   db         Generate and run database migrations
   agent      Publish local services to the global AGENTS.md
@@ -41,10 +42,51 @@ Packages:
   http        github.com/nathanpls/godo/http
   orm         github.com/nathanpls/godo/orm
   ratelimit   github.com/nathanpls/godo/http/plugins/ratelimit
+  apikey      github.com/nathanpls/godo/http/plugins/apikey
   sqlite      modernc.org/sqlite
   postgres    github.com/jackc/pgx/v5/stdlib
 
 The command runs go get from the module root and prints the relevant docs URL.`
+
+const authHelp = `Manage bearer API keys for the current Go project.
+
+Usage:
+  godo auth <command>
+
+Commands:
+  init       Create .godo/auth.json and protect it from Git
+  create     Create a key and print its secret once
+  list       List non-secret key metadata
+  revoke     Permanently revoke a key by ID
+
+Run "godo auth <command> --help" for command-specific help.`
+
+const authInitHelp = `Initialize project-local API key storage.
+
+Usage:
+  godo auth init
+
+Creates .godo/auth.json with mode 0600 and .godo/.gitignore.`
+
+const authCreateHelp = `Create a cryptographically random bearer API key.
+
+Usage:
+  godo auth create --name <name>
+
+Options:
+  --name <name>    Human-readable key name
+
+The secret is displayed once and only its SHA-256 hash is stored.`
+
+const authListHelp = `List API key IDs, names, prefixes, and creation times.
+
+Usage:
+  godo auth list`
+
+const authRevokeHelp = `Permanently revoke an API key by its numeric ID.
+
+Usage:
+  godo auth revoke <id>`
 
 const serviceHelp = `Manage persistent local Go services through systemd --user.
 

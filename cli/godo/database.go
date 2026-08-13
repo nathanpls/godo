@@ -329,8 +329,15 @@ func projectRoot(start string) (string, error) {
 		return "", err
 	}
 	for {
-		if info, err := os.Stat(filepath.Join(current, "go.mod")); err == nil && !info.IsDir() {
+		info, err := os.Stat(filepath.Join(current, "go.mod"))
+		if err == nil {
+			if info.IsDir() {
+				return "", fmt.Errorf("%s is a directory, expected a go.mod file", filepath.Join(current, "go.mod"))
+			}
 			return current, nil
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			return "", fmt.Errorf("inspect %s: %w", filepath.Join(current, "go.mod"), err)
 		}
 		parent := filepath.Dir(current)
 		if parent == current {
