@@ -119,6 +119,25 @@ if err := godohttp.JSON(w, stdhttp.StatusCreated, value); err != nil {
 }
 ```
 
+`DecodeJSON` strictly decodes one bounded request value. It requires an
+`application/json` or `+json` media type and rejects unknown fields, malformed
+bodies, trailing values, and oversized input:
+
+```go
+if err := godohttp.DecodeJSON(r, &input, 1<<20); err != nil {
+    var decode *godohttp.DecodeError
+    if errors.As(err, &decode) {
+        _ = godohttp.WriteProblem(w, decode.Problem())
+        return
+    }
+    _ = godohttp.WriteProblem(w, godohttp.Problem{Status: stdhttp.StatusInternalServerError})
+    return
+}
+```
+
+`DecodeError` exposes only a client-safe status and detail. Its wrapped decoder
+error is available for server-side logging but is not included in `Problem`.
+
 ### Problem responses
 
 `WriteProblem` writes RFC 9457 `application/problem+json` responses. The title

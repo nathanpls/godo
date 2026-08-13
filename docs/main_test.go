@@ -101,6 +101,23 @@ func TestDocsServeAgentAPIPages(t *testing.T) {
 	}
 }
 
+func TestDocsServeProductionPackagePages(t *testing.T) {
+	for _, test := range []struct{ path, prefix string }{
+		{"/id", "# IDs\n"},
+		{"/lifecycle", "# Service Lifecycle\n"},
+		{"/password", "# Password Hashing\n"},
+		{"/validate", "# Request Validation\n"},
+	} {
+		request := httptest.NewRequest(http.MethodGet, test.path, nil)
+		request.Header.Set("Accept", "text/markdown")
+		response := httptest.NewRecorder()
+		docsHandler().ServeHTTP(response, request)
+		if response.Code != http.StatusOK || !strings.HasPrefix(response.Body.String(), test.prefix) {
+			t.Fatalf("%s returned %d %q", test.path, response.Code, response.Body.String())
+		}
+	}
+}
+
 func TestDocsServeHTMLForBrowsers(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/http", nil)
 	request.Header.Set("Accept", "text/html,application/xhtml+xml")

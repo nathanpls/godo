@@ -73,6 +73,10 @@ Add a known package to the current Go module without modifying source files:
 ```sh
 godo add http
 godo add orm
+godo add id
+godo add lifecycle
+godo add password
+godo add validate
 godo add ratelimit
 godo add apikey
 godo add agentapi
@@ -92,6 +96,10 @@ Supported names map to:
 |---|---|
 | `http` | `github.com/nathanpls/godo/http` |
 | `orm` | `github.com/nathanpls/godo/orm` |
+| `id` | `github.com/nathanpls/godo/id` |
+| `lifecycle` | `github.com/nathanpls/godo/lifecycle` |
+| `password` | `github.com/nathanpls/godo/password` |
+| `validate` | `github.com/nathanpls/godo/validate` |
 | `ratelimit` | `github.com/nathanpls/godo/http/plugins/ratelimit` |
 | `apikey` | `github.com/nathanpls/godo/http/plugins/apikey` |
 | `agentapi` | `github.com/nathanpls/godo/http/plugins/agentapi` |

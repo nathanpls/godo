@@ -23,6 +23,40 @@ Each area lives in a focused top-level package and remains usable independently.
   request correlation IDs.
 - [`godo/orm`](./orm): driver-neutral SQLite and PostgreSQL models, migrations,
   CRUD, queries, and transactions.
+- [`godo/id`](./id): opaque cryptographically random resource identifiers.
+- [`godo/lifecycle`](./lifecycle): coordinated services and bounded graceful
+  shutdown.
+- [`godo/password`](./password): Argon2id password hashing, verification, and
+  rehash detection.
+- [`godo/validate`](./validate): explicit validation for request and domain data.
+
+## Roadmap
+
+Production-grade API building blocks, preferring godo and the standard library
+over additional dependencies:
+
+- [x] HTTP routing and middleware (`godo/http`, `net/http`)
+- [x] JSON and RFC 9457 problem responses
+- [x] PostgreSQL and SQLite database access (`godo/orm` plus a SQL driver)
+- [x] Models, CRUD, queries, and transactions (`godo/orm`)
+- [x] Database migration generation and execution (`godo db`)
+- [x] API key authentication and scopes
+- [x] Request IDs, rate limiting, and idempotency
+- [x] Cursor pagination
+- [x] Explicit OpenAPI 3.1 and agent discovery
+- [x] Structured logging (`log/slog`)
+- [x] Environment-based configuration (`os.Getenv`)
+- [x] Testing (`testing` and `httptest`)
+- [x] Request payload validation
+- [ ] JWT authentication
+- [x] Password hashing helpers (Argon2id)
+- [ ] Tracing and metrics with OpenTelemetry
+- [x] Service lifecycle helpers for graceful shutdown and background goroutines
+- [x] ID generation helpers when database-generated IDs are unsuitable
+
+Unchecked items are candidates, not dependency commitments. They should be
+added only when a real service needs them and the standard library is not
+enough.
 
 ## CLI
 

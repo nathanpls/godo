@@ -31,6 +31,10 @@ var pages = []page{
 	{Path: "/http/plugins/requestid", Title: "Request IDs", Markdown: readDoc("http-requestid.md")},
 	{Path: "/http/plugins/ratelimit", Title: "Rate Limiting", Markdown: readDoc("http-ratelimit.md")},
 	{Path: "/orm", Title: "ORM", Markdown: readDoc("orm.md")},
+	{Path: "/id", Title: "IDs", Markdown: readDoc("id.md")},
+	{Path: "/lifecycle", Title: "Lifecycle", Markdown: readDoc("lifecycle.md")},
+	{Path: "/password", Title: "Passwords", Markdown: readDoc("password.md")},
+	{Path: "/validate", Title: "Validation", Markdown: readDoc("validate.md")},
 }
 
 var pageTemplate = template.Must(template.New("page").Parse(`<!doctype html>
@@ -43,7 +47,7 @@ var pageTemplate = template.Must(template.New("page").Parse(`<!doctype html>
   <style>
     :root { color-scheme: light dark; font: 16px/1.65 system-ui, sans-serif; }
     body { margin: 0 auto; max-width: 76rem; padding: 2rem; }
-    nav { display: flex; gap: 1rem; margin-bottom: 2rem; }
+    nav { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
     nav a { color: inherit; font-weight: 650; }
     pre { font: 0.92rem/1.6 ui-monospace, monospace; overflow-x: auto; white-space: pre-wrap; }
   </style>

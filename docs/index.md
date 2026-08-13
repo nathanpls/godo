@@ -14,6 +14,10 @@ possible.
 - [HTTP Request IDs](/http/plugins/requestid): request correlation IDs
 - [HTTP Rate Limiting](/http/plugins/ratelimit): memory and shared database limits
 - [ORM](/orm): SQLite and PostgreSQL models, migrations, CRUD, and queries
+- [IDs](/id): opaque cryptographically random resource identifiers
+- [Lifecycle](/lifecycle): coordinated services and bounded graceful shutdown
+- [Passwords](/password): Argon2id hashing, verification, and rehash detection
+- [Validation](/validate): strict JSON decoding and explicit field validation
 
 ## Agent access
 
