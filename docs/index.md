@@ -6,6 +6,7 @@ possible.
 
 ## Packages
 
+- [CLI](/cli): persistent local Go services and agent discovery
 - [HTTP](/http): routing, middleware, JSON responses, and WebSockets
 
 ## Agent access

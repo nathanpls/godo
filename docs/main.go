@@ -23,6 +23,7 @@ type page struct {
 
 var pages = []page{
 	{Path: "/", Title: "godo", Markdown: readDoc("index.md")},
+	{Path: "/cli", Title: "CLI", Markdown: readDoc("cli.md")},
 	{Path: "/http", Title: "HTTP", Markdown: readDoc("http.md")},
 }
 

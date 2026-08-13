@@ -12,6 +12,32 @@ Each area lives in a focused top-level package and remains usable independently.
 - [`godo/http`](./http): method-aware HTTP routing, middleware, JSON responses,
   and WebSockets.
 
+## CLI
+
+Install the `godo` command:
+
+```sh
+go install ./cli/godo
+```
+
+On Linux, `godo` can build Go programs into persistent `systemd --user`
+services and publish their local URLs to OpenCode agents:
+
+```sh
+godo service add ./docs \
+  --name godo-docs \
+  --additions 'Request Accept: text/markdown for canonical documentation'
+
+godo service list
+godo service update 1
+godo service remove 1
+godo agent
+```
+
+Managed applications receive their assigned port through the `PORT` environment
+variable. See the [CLI documentation](./docs/cli.md) for behavior, storage, and
+logging details.
+
 ## Principles
 
 - Prefer the standard library.

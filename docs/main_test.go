@@ -25,6 +25,21 @@ func TestDocsServeMarkdownForAgents(t *testing.T) {
 	}
 }
 
+func TestDocsServeCLIPage(t *testing.T) {
+	request := httptest.NewRequest(http.MethodGet, "/cli", nil)
+	request.Header.Set("Accept", "text/markdown")
+	response := httptest.NewRecorder()
+
+	docsHandler().ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	if !strings.HasPrefix(response.Body.String(), "# CLI\n") {
+		t.Fatalf("response does not contain the CLI Markdown page")
+	}
+}
+
 func TestDocsServeHTMLForBrowsers(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/http", nil)
 	request.Header.Set("Accept", "text/html,application/xhtml+xml")
