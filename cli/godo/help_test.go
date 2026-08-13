@@ -10,13 +10,16 @@ func TestCommandHelp(t *testing.T) {
 		arguments []string
 		contains  []string
 	}{
-		{[]string{"--help"}, []string{"godo makes", "init", "service", "db", "source"}},
+		{[]string{"--help"}, []string{"godo makes", "init", "service", "db", "source", "issue"}},
 		{[]string{"init", "--help"}, []string{"godo init [directory]", "--module"}},
 		{[]string{"add", "--help"}, []string{"godo add <package>", "ratelimit", "postgres"}},
 		{[]string{"auth", "--help"}, []string{"Manage bearer API keys", "create", "revoke"}},
 		{[]string{"auth", "create", "--help"}, []string{"--name", "displayed once"}},
 		{[]string{"api", "--help"}, []string{"agent discovery", "check"}},
 		{[]string{"api", "check", "--help"}, []string{"godo api check", "OpenAPI", "request ID"}},
+		{[]string{"issue", "--help"}, []string{"nathanpls/godo", "templates", "comment", "reopen", "gh CLI"}},
+		{[]string{"issue", "add", "--help"}, []string{"godo issue add", "--field", "--dry-run"}},
+		{[]string{"issue", "edit", "--help"}, []string{"godo issue edit", "--add-label", "managed body"}},
 		{[]string{"service", "--help"}, []string{"Manage persistent", "update", "remove"}},
 		{[]string{"service", "add", "--help"}, []string{"godo service add", "--additions"}},
 		{[]string{"service", "edit", "--help"}, []string{"godo service edit", "without rebuilding", "use \"\" to clear"}},

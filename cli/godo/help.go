@@ -15,6 +15,7 @@ Commands:
   add        Add a known godo package or database driver
   auth       Manage project API keys
   api        Inspect an API's agent-readiness contract
+  issue      Communicate through nathanpls/godo GitHub issues
   service    Manage persistent local Go services
   db         Generate and run database migrations
   source     Inspect the godo source selected by this project
@@ -111,6 +112,92 @@ Usage:
 
 The check is read-only and validates /.well-known/godo.json, OpenAPI, llms.txt,
 Markdown documentation, bearer metadata, and request ID response headers.`
+
+const issueHelp = `Communicate through structured issues in nathanpls/godo.
+
+Usage:
+  godo issue <command> [options]
+
+Commands:
+  templates  List built-in issue templates
+  template   Describe one template and its fields
+  add        Create a structured issue
+  list       List issues; open by default
+  search     Search issues
+  get        View one issue
+  edit       Edit issue fields or metadata
+  comment    Add a comment
+  close      Close an issue
+  reopen     Reopen an issue
+
+GitHub operations require the gh CLI and an authenticated github.com account.
+Every operation is fixed to the nathanpls/godo repository.`
+
+const issueAddHelp = `Create a structured issue in nathanpls/godo.
+
+Usage:
+  godo issue add <template> --title <title> --field <name=value> [options]
+
+Options:
+  --field <name=value>  Template field; repeat for multiple fields
+  --label <name>        Additional existing label; repeat for multiple labels
+  --assignee <login>    Assignee; repeat for multiple assignees
+  --dry-run             Render without contacting GitHub
+  --json                Print structured output
+
+Run "godo issue template <template>" to discover required fields.`
+
+const issueListHelp = `List or search issues in nathanpls/godo.
+
+Usage:
+  godo issue list [options]
+  godo issue search [query] [options]
+
+Options:
+  --state <open|closed|all>  Issue state; defaults to open
+  --label <name>             Filter by label; repeat for multiple labels
+  --author <login>           Filter by author
+  --assignee <login>         Filter by assignee
+  --limit <number>           Maximum results; defaults to 30
+  --json                     Print stable JSON fields`
+
+const issueGetHelp = `View one issue in nathanpls/godo.
+
+Usage:
+  godo issue get <number> [--comments] [--json]`
+
+const issueEditHelp = `Edit an issue in nathanpls/godo.
+
+Usage:
+  godo issue edit <number> [options]
+
+Options:
+  --title <title>              Replace the title
+  --field <name=value>         Replace a godo-managed template field
+  --add-label <name>           Add a label
+  --remove-label <name>        Remove a label
+  --add-assignee <login>       Add an assignee
+  --remove-assignee <login>    Remove an assignee
+  --dry-run                    Render field changes without editing GitHub
+
+Field edits preserve all text outside the godo-managed body block.`
+
+const issueCommentHelp = `Comment on an issue in nathanpls/godo.
+
+Usage:
+  godo issue comment <number> --body <text>
+
+Shell quoting may include newlines in the comment body.`
+
+const issueCloseHelp = `Close an issue in nathanpls/godo.
+
+Usage:
+  godo issue close <number> [--comment <text>]`
+
+const issueReopenHelp = `Reopen an issue in nathanpls/godo.
+
+Usage:
+  godo issue reopen <number> [--comment <text>]`
 
 const serviceHelp = `Manage persistent local Go services through systemd --user.
 

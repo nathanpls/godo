@@ -20,6 +20,7 @@ type app struct {
 	cwd           string
 	goGet         func(string, string) error
 	resolveSource func(string, string) (sourceLocation, error)
+	runGH         ghRunner
 }
 
 func newApp() (*app, error) {
@@ -84,6 +85,8 @@ func (a *app) run(args []string) error {
 		return a.runAuth(args[1:])
 	case "api":
 		return a.runAPI(args[1:])
+	case "issue":
+		return a.runIssue(args[1:])
 	case "service":
 		return a.runService(args[1:])
 	case "db":
