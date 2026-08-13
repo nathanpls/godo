@@ -116,11 +116,11 @@ func TestAuthCreateRevokesAfterOutputFailure(t *testing.T) {
 }
 
 func TestParseAuthCreate(t *testing.T) {
-	name, err := parseAuthCreate([]string{"--name=agent"})
-	if err != nil || name != "agent" {
-		t.Fatalf("name = %q, error = %v", name, err)
+	name, scopes, err := parseAuthCreate([]string{"--name=agent", "--scope", "plans:write", "--scope=plans:read"})
+	if err != nil || name != "agent" || len(scopes) != 2 {
+		t.Fatalf("name = %q, scopes = %v, error = %v", name, scopes, err)
 	}
-	if _, err := parseAuthCreate(nil); err == nil {
+	if _, _, err := parseAuthCreate(nil); err == nil {
 		t.Fatal("missing name was accepted")
 	}
 }

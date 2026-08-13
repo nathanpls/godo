@@ -167,11 +167,11 @@ func setHeaders(header stdhttp.Header, limit int64, result Result, now time.Time
 }
 
 func defaultDenied(w stdhttp.ResponseWriter, _ *stdhttp.Request, _ Result) {
-	stdhttp.Error(w, "rate limit exceeded", stdhttp.StatusTooManyRequests)
+	_ = godohttp.WriteProblem(w, godohttp.Problem{Status: stdhttp.StatusTooManyRequests, Title: "Rate limit exceeded"})
 }
 
 func defaultError(w stdhttp.ResponseWriter, _ *stdhttp.Request, _ error) {
-	stdhttp.Error(w, "rate limiter unavailable", stdhttp.StatusServiceUnavailable)
+	_ = godohttp.WriteProblem(w, godohttp.Problem{Status: stdhttp.StatusServiceUnavailable, Title: "Rate limiter unavailable"})
 }
 
 func nilInterface(value any) bool {

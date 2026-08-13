@@ -20,13 +20,14 @@ import (
 	"unicode"
 )
 
-const fileVersion = 1
+const fileVersion = 2
 
 // Key describes an API key without exposing its secret.
 type Key struct {
 	ID        int       `json:"id"`
 	Name      string    `json:"name"`
 	Prefix    string    `json:"prefix"`
+	Scopes    []string  `json:"scopes,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -123,9 +124,19 @@ func InitFile(path string) error {
 
 // CreateKey creates a key, stores only its hash, and returns the secret once.
 func CreateKey(path, name string) (Key, string, error) {
+	return CreateKeyWithScopes(path, name, nil)
+}
+
+// CreateKeyWithScopes creates a key with explicit permissions, stores only its
+// hash, and returns the secret once.
+func CreateKeyWithScopes(path, name string, scopes []string) (Key, string, error) {
 	name = strings.TrimSpace(name)
 	if !validKeyName(name) {
 		return Key{}, "", errors.New("apikey: key name must be 1-100 characters on one line")
+	}
+	scopes, err := normalizeScopes(scopes)
+	if err != nil {
+		return Key{}, "", err
 	}
 	unlock, err := lockKeyFile(path)
 	if err != nil {
@@ -146,8 +157,9 @@ func CreateKey(path, name string) (Key, string, error) {
 	prefix := "godo_" + hex.EncodeToString(random[:4])
 	token := prefix + "_" + base64.RawURLEncoding.EncodeToString(random)
 	digest := sha256.Sum256([]byte(token))
-	identity := Key{ID: registry.NextID, Name: name, Prefix: prefix, CreatedAt: time.Now().UTC()}
+	identity := Key{ID: registry.NextID, Name: name, Prefix: prefix, Scopes: scopes, CreatedAt: time.Now().UTC()}
 	registry.NextID++
+	registry.Version = fileVersion
 	registry.Keys = append(registry.Keys, storedKey{Key: identity, Hash: hex.EncodeToString(digest[:])})
 	if err := writeKeyFile(path, registry); err != nil {
 		return Key{}, "", err
@@ -188,6 +200,7 @@ func RevokeKey(path string, id int) (bool, error) {
 	if len(registry.Keys) == before {
 		return false, nil
 	}
+	registry.Version = fileVersion
 	if err := writeKeyFile(path, registry); err != nil {
 		return false, err
 	}
@@ -212,7 +225,7 @@ func readKeyFile(path string) (keyFile, error) {
 	if decoder.Decode(&struct{}{}) != io.EOF {
 		return keyFile{}, errors.New("apikey: auth file contains unexpected data")
 	}
-	if registry.Version != fileVersion {
+	if registry.Version != 1 && registry.Version != fileVersion {
 		return keyFile{}, fmt.Errorf("apikey: unsupported auth file version %d", registry.Version)
 	}
 	if registry.NextID < 1 {
@@ -223,7 +236,11 @@ func readKeyFile(path string) (keyFile, error) {
 	greatestID := 0
 	for _, key := range registry.Keys {
 		digest, hashErr := hex.DecodeString(key.Hash)
-		if key.ID < 1 || seen[key.ID] || !validKeyName(key.Name) || key.Prefix == "" || hashErr != nil || len(digest) != sha256.Size || seenHashes[key.Hash] || key.CreatedAt.IsZero() {
+		normalizedScopes, scopeErr := normalizeScopes(key.Scopes)
+		if registry.Version == 1 && len(key.Scopes) != 0 {
+			scopeErr = errors.New("version 1 keys cannot contain scopes")
+		}
+		if key.ID < 1 || seen[key.ID] || !validKeyName(key.Name) || key.Prefix == "" || hashErr != nil || len(digest) != sha256.Size || seenHashes[key.Hash] || key.CreatedAt.IsZero() || scopeErr != nil || !slices.Equal(normalizedScopes, key.Scopes) {
 			return keyFile{}, errors.New("apikey: auth file contains invalid key metadata")
 		}
 		seen[key.ID] = true
@@ -234,6 +251,24 @@ func readKeyFile(path string) (keyFile, error) {
 		return keyFile{}, errors.New("apikey: auth file next_id does not follow existing keys")
 	}
 	return registry, nil
+}
+
+func normalizeScopes(scopes []string) ([]string, error) {
+	result := slices.Clone(scopes)
+	for _, scope := range result {
+		if scope == "" || len(scope) > 100 {
+			return nil, errors.New("apikey: scope must be 1-100 characters")
+		}
+		for _, character := range scope {
+			if character >= 'a' && character <= 'z' || character >= 'A' && character <= 'Z' || character >= '0' && character <= '9' || strings.ContainsRune(":_-.", character) {
+				continue
+			}
+			return nil, fmt.Errorf("apikey: invalid scope %q", scope)
+		}
+	}
+	slices.Sort(result)
+	result = slices.Compact(result)
+	return result, nil
 }
 
 func validKeyName(name string) bool {

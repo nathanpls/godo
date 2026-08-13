@@ -35,6 +35,13 @@ func TestFileStoreLifecycle(t *testing.T) {
 	if first.ID != 1 || second.ID != 2 || firstToken == secondToken || !strings.HasPrefix(firstToken, first.Prefix+"_") {
 		t.Fatalf("keys = %+v %q, %+v %q", first, firstToken, second, secondToken)
 	}
+	third, _, err := CreateKeyWithScopes(path, "scoped", []string{"plans:write", "plans:read", "plans:read"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !third.HasScope("plans:read") || !third.HasScope("plans:write") || len(third.Scopes) != 2 {
+		t.Fatalf("scopes = %v", third.Scopes)
+	}
 
 	content, err := os.ReadFile(path)
 	if err != nil {
@@ -57,7 +64,7 @@ func TestFileStoreLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(keys) != 2 || keys[0].ID != 1 || keys[1].ID != 2 {
+	if len(keys) != 3 || keys[0].ID != 1 || keys[1].ID != 2 || keys[2].ID != 3 {
 		t.Fatalf("keys = %+v", keys)
 	}
 
@@ -127,5 +134,30 @@ func TestFileStoreRequiresFile(t *testing.T) {
 	}
 	if _, err := ListKeys(""); err == nil || errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("empty path error = %v", err)
+	}
+}
+
+func TestVersionOneFileIsUpgraded(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "auth.json")
+	if err := InitFile(path); err != nil {
+		t.Fatal(err)
+	}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	content = []byte(strings.Replace(string(content), `"version": 2`, `"version": 1`, 1))
+	if err := os.WriteFile(path, content, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := CreateKeyWithScopes(path, "scoped", []string{"plans:read"}); err != nil {
+		t.Fatal(err)
+	}
+	content, err = os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(content), `"version": 2`) {
+		t.Fatalf("file was not upgraded:\n%s", content)
 	}
 }

@@ -1,6 +1,7 @@
 package apikey
 
 import (
+	"context"
 	"errors"
 	stdhttp "net/http"
 	"net/http/httptest"
@@ -105,7 +106,7 @@ func TestPluginSkipAndStoreError(t *testing.T) {
 	request := httptest.NewRequest(stdhttp.MethodGet, "/", nil)
 	request.Header.Set("Authorization", "Bearer secret")
 	router.ServeHTTP(failed, request)
-	if failed.Code != stdhttp.StatusServiceUnavailable || failed.Body.String() != "authentication unavailable\n" {
+	if failed.Code != stdhttp.StatusServiceUnavailable || failed.Header().Get("Content-Type") != "application/problem+json; charset=utf-8" {
 		t.Fatalf("failure = %d %q", failed.Code, failed.Body.String())
 	}
 }
@@ -123,5 +124,31 @@ func TestPluginValidation(t *testing.T) {
 	}
 	if err := godohttp.New().Install(New(Config{Store: staticStore{}, Realm: `bad\realm`})); err == nil {
 		t.Fatal("realm with backslash was accepted")
+	}
+}
+
+func TestRequireScopes(t *testing.T) {
+	middleware, err := Require("plans:write")
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := middleware(stdhttp.HandlerFunc(func(w stdhttp.ResponseWriter, _ *stdhttp.Request) {
+		w.WriteHeader(stdhttp.StatusNoContent)
+	}))
+	requestWithKey := func(scopes ...string) *stdhttp.Request {
+		request := httptest.NewRequest(stdhttp.MethodPost, "/plans", nil)
+		return request.WithContext(context.WithValue(request.Context(), identityContextKey{}, Key{Scopes: scopes}))
+	}
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, requestWithKey("plans:read"))
+	if response.Code != stdhttp.StatusForbidden {
+		t.Fatalf("status = %d, want 403", response.Code)
+	}
+
+	response = httptest.NewRecorder()
+	handler.ServeHTTP(response, requestWithKey("plans:write"))
+	if response.Code != stdhttp.StatusNoContent {
+		t.Fatalf("status = %d, want 204", response.Code)
 	}
 }

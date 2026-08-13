@@ -119,6 +119,18 @@ func TestAddDependencyError(t *testing.T) {
 	}
 }
 
+func TestAgentHTTPDependenciesAreRegistered(t *testing.T) {
+	for name, path := range map[string]string{
+		"agentapi":    "github.com/nathanpls/godo/http/plugins/agentapi",
+		"idempotency": "github.com/nathanpls/godo/http/plugins/idempotency",
+		"requestid":   "github.com/nathanpls/godo/http/plugins/requestid",
+	} {
+		if dependencies[name].path != path {
+			t.Fatalf("dependency %q = %q", name, dependencies[name].path)
+		}
+	}
+}
+
 func assertFileContains(t *testing.T, path, text string) {
 	t.Helper()
 	content, err := os.ReadFile(path)

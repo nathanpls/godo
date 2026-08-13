@@ -14,6 +14,7 @@ Commands:
   init       Initialize a minimal Go project
   add        Add a known godo package or database driver
   auth       Manage project API keys
+  api        Inspect an API's agent-readiness contract
   service    Manage persistent local Go services
   db         Generate and run database migrations
   source     Inspect the godo source selected by this project
@@ -44,6 +45,9 @@ Packages:
   orm         github.com/nathanpls/godo/orm
   ratelimit   github.com/nathanpls/godo/http/plugins/ratelimit
   apikey      github.com/nathanpls/godo/http/plugins/apikey
+  agentapi    github.com/nathanpls/godo/http/plugins/agentapi
+  idempotency github.com/nathanpls/godo/http/plugins/idempotency
+  requestid   github.com/nathanpls/godo/http/plugins/requestid
   sqlite      modernc.org/sqlite
   postgres    github.com/jackc/pgx/v5/stdlib
 
@@ -72,10 +76,11 @@ Creates .godo/auth.json with mode 0600 and .godo/.gitignore.`
 const authCreateHelp = `Create a cryptographically random bearer API key.
 
 Usage:
-  godo auth create --name <name>
+  godo auth create --name <name> [--scope <scope> ...]
 
 Options:
   --name <name>    Human-readable key name
+  --scope <scope>  Permission assigned to the key; repeat for multiple scopes
 
 The secret is displayed once and only its SHA-256 hash is stored.`
 
@@ -88,6 +93,24 @@ const authRevokeHelp = `Permanently revoke an API key by its numeric ID.
 
 Usage:
   godo auth revoke <id>`
+
+const apiHelp = `Inspect an HTTP API's agent discovery contract.
+
+Usage:
+  godo api check <base-url>
+
+Commands:
+  check    Validate discovery, OpenAPI, llms.txt, Markdown docs, and request IDs
+
+Run "godo api check --help" for check details.`
+
+const apiCheckHelp = `Validate an API's agent-readable discovery endpoints.
+
+Usage:
+  godo api check <base-url>
+
+The check is read-only and validates /.well-known/godo.json, OpenAPI, llms.txt,
+Markdown documentation, bearer metadata, and request ID response headers.`
 
 const serviceHelp = `Manage persistent local Go services through systemd --user.
 

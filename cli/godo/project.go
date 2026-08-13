@@ -181,6 +181,18 @@ var dependencies = map[string]dependency{
 		path: "github.com/nathanpls/godo/http/plugins/apikey",
 		docs: "http://localhost:41000/http/plugins/apikey",
 	},
+	"agentapi": {
+		path: "github.com/nathanpls/godo/http/plugins/agentapi",
+		docs: "http://localhost:41000/http/plugins/agentapi",
+	},
+	"idempotency": {
+		path: "github.com/nathanpls/godo/http/plugins/idempotency",
+		docs: "http://localhost:41000/http/plugins/idempotency",
+	},
+	"requestid": {
+		path: "github.com/nathanpls/godo/http/plugins/requestid",
+		docs: "http://localhost:41000/http/plugins/requestid",
+	},
 	"sqlite": {
 		path: "modernc.org/sqlite",
 		docs: "http://localhost:41000/orm",

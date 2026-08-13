@@ -5,6 +5,7 @@ import (
 	"errors"
 	stdhttp "net/http"
 	"reflect"
+	"slices"
 	"strings"
 
 	godohttp "github.com/nathanpls/godo/http"
@@ -70,12 +71,12 @@ func (plugin *Plugin) Install(router *godohttp.Router) error {
 		realm := plugin.config.Realm
 		plugin.config.Unauthorized = func(w stdhttp.ResponseWriter, _ *stdhttp.Request) {
 			w.Header().Set("WWW-Authenticate", `Bearer realm="`+realm+`"`)
-			stdhttp.Error(w, "unauthorized", stdhttp.StatusUnauthorized)
+			_ = godohttp.WriteProblem(w, godohttp.Problem{Status: stdhttp.StatusUnauthorized, Title: "Unauthorized"})
 		}
 	}
 	if plugin.config.OnError == nil {
 		plugin.config.OnError = func(w stdhttp.ResponseWriter, _ *stdhttp.Request, _ error) {
-			stdhttp.Error(w, "authentication unavailable", stdhttp.StatusServiceUnavailable)
+			_ = godohttp.WriteProblem(w, godohttp.Problem{Status: stdhttp.StatusServiceUnavailable, Title: "Authentication unavailable"})
 		}
 	}
 	router.Use(plugin.middleware)
@@ -127,6 +128,39 @@ type identityContextKey struct{}
 func KeyFromContext(ctx context.Context) (Key, bool) {
 	identity, ok := ctx.Value(identityContextKey{}).(Key)
 	return identity, ok
+}
+
+// HasScope reports whether key contains scope.
+func (key Key) HasScope(scope string) bool {
+	return slices.Contains(key.Scopes, scope)
+}
+
+// Require returns middleware that permits only authenticated keys containing
+// every requested scope. Install API key authentication before this middleware.
+func Require(scopes ...string) (godohttp.Middleware, error) {
+	normalized, err := normalizeScopes(scopes)
+	if err != nil {
+		return nil, err
+	}
+	if len(normalized) == 0 {
+		return nil, errors.New("apikey: Require needs at least one scope")
+	}
+	return func(next stdhttp.Handler) stdhttp.Handler {
+		return stdhttp.HandlerFunc(func(w stdhttp.ResponseWriter, request *stdhttp.Request) {
+			key, ok := KeyFromContext(request.Context())
+			if !ok {
+				_ = godohttp.WriteProblem(w, godohttp.Problem{Status: stdhttp.StatusUnauthorized, Title: "Authentication required"})
+				return
+			}
+			for _, scope := range normalized {
+				if !key.HasScope(scope) {
+					_ = godohttp.WriteProblem(w, godohttp.Problem{Status: stdhttp.StatusForbidden, Title: "Insufficient scope", Extensions: map[string]any{"required_scopes": normalized}})
+					return
+				}
+			}
+			next.ServeHTTP(w, request)
+		})
+	}, nil
 }
 
 func bearerToken(header string) (string, bool) {

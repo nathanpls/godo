@@ -82,6 +82,8 @@ func (a *app) run(args []string) error {
 		return a.addDependency(args[1:])
 	case "auth":
 		return a.runAuth(args[1:])
+	case "api":
+		return a.runAPI(args[1:])
 	case "service":
 		return a.runService(args[1:])
 	case "db":

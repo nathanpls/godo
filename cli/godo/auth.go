@@ -33,11 +33,11 @@ func (a *app) runAuth(arguments []string) error {
 		if isHelp(arguments[1:]) {
 			return printHelp(a.stdout, authCreateHelp)
 		}
-		name, err := parseAuthCreate(arguments[1:])
+		name, scopes, err := parseAuthCreate(arguments[1:])
 		if err != nil {
 			return err
 		}
-		return a.createAuthKey(name)
+		return a.createAuthKey(name, scopes)
 	case "list", "ls":
 		if isHelp(arguments[1:]) {
 			return printHelp(a.stdout, authListHelp)
@@ -60,26 +60,32 @@ func (a *app) runAuth(arguments []string) error {
 	}
 }
 
-func parseAuthCreate(arguments []string) (string, error) {
+func parseAuthCreate(arguments []string) (string, []string, error) {
 	var name string
+	var scopes []string
 	for i := 0; i < len(arguments); i++ {
 		option, inline, hasInline := strings.Cut(arguments[i], "=")
-		if option != "--name" {
-			return "", fmt.Errorf("unknown auth create option %q", arguments[i])
+		if option != "--name" && option != "--scope" {
+			return "", nil, fmt.Errorf("unknown auth create option %q", arguments[i])
 		}
-		name = inline
+		value := inline
 		if !hasInline {
 			i++
 			if i >= len(arguments) {
-				return "", errors.New("--name requires a value")
+				return "", nil, fmt.Errorf("%s requires a value", option)
 			}
-			name = arguments[i]
+			value = arguments[i]
+		}
+		if option == "--name" {
+			name = value
+		} else {
+			scopes = append(scopes, value)
 		}
 	}
 	if strings.TrimSpace(name) == "" {
-		return "", errors.New("auth create requires --name <name>")
+		return "", nil, errors.New("auth create requires --name <name>")
 	}
-	return name, nil
+	return name, scopes, nil
 }
 
 func parseAuthID(arguments []string) (int, error) {
@@ -117,12 +123,12 @@ func (a *app) initAuth() error {
 	return nil
 }
 
-func (a *app) createAuthKey(name string) error {
+func (a *app) createAuthKey(name string, scopes []string) error {
 	_, path, err := a.authPath()
 	if err != nil {
 		return err
 	}
-	identity, token, err := apikey.CreateKey(path, name)
+	identity, token, err := apikey.CreateKeyWithScopes(path, name, scopes)
 	if err != nil {
 		return err
 	}
@@ -148,9 +154,9 @@ func (a *app) listAuthKeys() error {
 		return err
 	}
 	writer := tabwriter.NewWriter(a.stdout, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(writer, "ID\tNAME\tPREFIX\tCREATED")
+	fmt.Fprintln(writer, "ID\tNAME\tPREFIX\tSCOPES\tCREATED")
 	for _, key := range keys {
-		fmt.Fprintf(writer, "%d\t%s\t%s\t%s\n", key.ID, key.Name, key.Prefix, key.CreatedAt.Format("2006-01-02 15:04:05Z"))
+		fmt.Fprintf(writer, "%d\t%s\t%s\t%s\t%s\n", key.ID, key.Name, key.Prefix, strings.Join(key.Scopes, ","), key.CreatedAt.Format("2006-01-02 15:04:05Z"))
 	}
 	return writer.Flush()
 }

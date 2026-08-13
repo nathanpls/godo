@@ -117,8 +117,8 @@ func TestLimiterSkipAndError(t *testing.T) {
 	if failed.Code != stdhttp.StatusServiceUnavailable {
 		t.Fatalf("failure status = %d", failed.Code)
 	}
-	if body := failed.Body.String(); body != "rate limiter unavailable\n" {
-		t.Fatalf("failure body = %q", body)
+	if got := failed.Header().Get("Content-Type"); got != "application/problem+json; charset=utf-8" {
+		t.Fatalf("failure Content-Type = %q", got)
 	}
 }
 
