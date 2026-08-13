@@ -2,11 +2,26 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	stdhttp "net/http"
+	"reflect"
 )
 
 // Middleware wraps an HTTP handler.
 type Middleware func(stdhttp.Handler) stdhttp.Handler
+
+// Plugin configures a Router with middleware, routes, or related behavior.
+type Plugin interface {
+	Install(*Router) error
+}
+
+// PluginFunc adapts a function into a Plugin.
+type PluginFunc func(*Router) error
+
+// Install configures router by calling function.
+func (function PluginFunc) Install(router *Router) error {
+	return function(router)
+}
 
 // Router dispatches requests by method and path.
 //
@@ -34,6 +49,24 @@ func (r *Router) Use(middleware ...Middleware) {
 		handler = r.middleware[i](handler)
 	}
 	r.handler = handler
+}
+
+// Install adds a plugin to the router. Install plugins before serving requests.
+func (r *Router) Install(plugin Plugin) error {
+	if plugin == nil || nilValue(plugin) {
+		return errors.New("http: plugin must not be nil")
+	}
+	return plugin.Install(r)
+}
+
+func nilValue(value any) bool {
+	reflected := reflect.ValueOf(value)
+	switch reflected.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return reflected.IsNil()
+	default:
+		return false
+	}
 }
 
 // Handle registers a handler for an HTTP method and path pattern. It accepts

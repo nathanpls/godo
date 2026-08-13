@@ -1,11 +1,16 @@
 package http
 
 import (
+	"errors"
 	stdhttp "net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 )
+
+type nilPlugin struct{}
+
+func (*nilPlugin) Install(*Router) error { return nil }
 
 func TestRouterMethods(t *testing.T) {
 	methods := []struct {
@@ -86,5 +91,50 @@ func TestJSON(t *testing.T) {
 	}
 	if got := response.Body.String(); got != "{\"status\":\"created\"}\n" {
 		t.Fatalf("body = %q", got)
+	}
+}
+
+func TestInstallPlugin(t *testing.T) {
+	router := New()
+	installed := false
+	err := router.Install(PluginFunc(func(router *Router) error {
+		installed = true
+		router.Get("/plugin", func(w stdhttp.ResponseWriter, _ *stdhttp.Request) {
+			w.WriteHeader(stdhttp.StatusNoContent)
+		})
+		return nil
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !installed {
+		t.Fatal("plugin was not installed")
+	}
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, httptest.NewRequest(stdhttp.MethodGet, "/plugin", nil))
+	if response.Code != stdhttp.StatusNoContent {
+		t.Fatalf("status = %d, want %d", response.Code, stdhttp.StatusNoContent)
+	}
+}
+
+func TestInstallPluginError(t *testing.T) {
+	want := errors.New("invalid configuration")
+	err := New().Install(PluginFunc(func(*Router) error { return want }))
+	if !errors.Is(err, want) {
+		t.Fatalf("error = %v, want %v", err, want)
+	}
+}
+
+func TestInstallNilPlugin(t *testing.T) {
+	if err := New().Install(nil); err == nil {
+		t.Fatal("nil plugin was accepted")
+	}
+	var plugin *nilPlugin
+	if err := New().Install(plugin); err == nil {
+		t.Fatal("typed nil plugin was accepted")
+	}
+	var function PluginFunc
+	if err := New().Install(function); err == nil {
+		t.Fatal("nil plugin function was accepted")
 	}
 }
