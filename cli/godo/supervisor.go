@@ -24,8 +24,27 @@ func (s systemdSupervisor) install(service service, binary string) error {
 	if _, err := exec.LookPath("systemctl"); err != nil {
 		return errorsUnsupportedSupervisor()
 	}
-	unitPath := s.unitPath(service.ID)
-	unit := fmt.Sprintf(`[Unit]
+	unitFile := s.unitPath(service.ID)
+	unit := renderUnit(service, binary)
+	if err := writeAtomic(unitFile, []byte(unit), 0o644); err != nil {
+		return fmt.Errorf("write user service: %w", err)
+	}
+	if err := systemctl("daemon-reload"); err != nil {
+		_ = os.Remove(unitFile)
+		return err
+	}
+	if err := systemctl("enable", "--now", s.unitName(service.ID)); err != nil {
+		_ = systemctl("disable", "--now", s.unitName(service.ID))
+		_ = os.Remove(filepath.Join(s.unitDir, "default.target.wants", s.unitName(service.ID)))
+		_ = os.Remove(unitFile)
+		_ = systemctl("daemon-reload")
+		return err
+	}
+	return nil
+}
+
+func renderUnit(service service, binary string) string {
+	return fmt.Sprintf(`[Unit]
 Description=godo service %d: %s
 After=network.target
 
@@ -39,20 +58,7 @@ RestartSec=2
 
 [Install]
 WantedBy=default.target
-`, service.ID, unitDescription(service.Name), unitQuote(service.WorkDir), unitQuote(binary), unitQuote("PORT="+strconv.Itoa(service.Port)))
-	if err := writeAtomic(unitPath, []byte(unit), 0o644); err != nil {
-		return fmt.Errorf("write user service: %w", err)
-	}
-	if err := systemctl("daemon-reload"); err != nil {
-		_ = os.Remove(unitPath)
-		return err
-	}
-	if err := systemctl("enable", "--now", s.unitName(service.ID)); err != nil {
-		_ = os.Remove(unitPath)
-		_ = systemctl("daemon-reload")
-		return err
-	}
-	return nil
+`, service.ID, unitDescription(service.Name), unitPath(service.WorkDir), unitQuote(binary), unitQuote("PORT="+strconv.Itoa(service.Port)))
 }
 
 func (s systemdSupervisor) restart(service service) error {
@@ -98,6 +104,22 @@ func unitQuote(value string) string {
 	value = strings.ReplaceAll(value, "\\", "\\\\")
 	value = strings.ReplaceAll(value, "\"", "\\\"")
 	return `"` + value + `"`
+}
+
+func unitPath(value string) string {
+	var result strings.Builder
+	for _, character := range []byte(value) {
+		switch {
+		case character == '%':
+			result.WriteString("%%")
+		case character == '/' || character == '.' || character == '_' || character == '-' ||
+			character >= '0' && character <= '9' || character >= 'A' && character <= 'Z' || character >= 'a' && character <= 'z':
+			result.WriteByte(character)
+		default:
+			fmt.Fprintf(&result, "\\x%02x", character)
+		}
+	}
+	return result.String()
 }
 
 func unitDescription(value string) string {
