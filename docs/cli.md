@@ -66,12 +66,26 @@ godo init . --module github.com/example/my-api
 The generated `main.go` contains only an empty `main` function. `godo init` does
 not silently choose an application architecture or add dependencies.
 
+Use the explicit Discord template for a signal-aware bot starter:
+
+```sh
+godo init my-bot --module github.com/example/my-bot --template discord
+cd my-bot
+godo add discord
+```
+
+The template adds `.env.example` and a `main.go` that reads
+`DISCORD_BOT_TOKEN`. It still leaves dependency selection to `godo add` and does
+not load `.env` files automatically. See the [Discord documentation](/discord)
+for Developer Portal and privileged intent setup.
+
 ## Add dependencies
 
 Add a known package to the current Go module without modifying source files:
 
 ```sh
 godo add http
+godo add discord
 godo add orm
 godo add id
 godo add lifecycle
@@ -94,17 +108,18 @@ Supported names map to:
 
 | Name | Dependency |
 |---|---|
-| `http` | `github.com/nathanpls/godo/http` |
-| `orm` | `github.com/nathanpls/godo/orm` |
-| `id` | `github.com/nathanpls/godo/id` |
-| `lifecycle` | `github.com/nathanpls/godo/lifecycle` |
-| `password` | `github.com/nathanpls/godo/password` |
-| `validate` | `github.com/nathanpls/godo/validate` |
-| `ratelimit` | `github.com/nathanpls/godo/http/plugins/ratelimit` |
-| `apikey` | `github.com/nathanpls/godo/http/plugins/apikey` |
-| `agentapi` | `github.com/nathanpls/godo/http/plugins/agentapi` |
-| `idempotency` | `github.com/nathanpls/godo/http/plugins/idempotency` |
-| `requestid` | `github.com/nathanpls/godo/http/plugins/requestid` |
+| `http` | `github.com/nathanpls/godo/core/http` |
+| `discord` | `github.com/nathanpls/godo/channels/discord` |
+| `orm` | `github.com/nathanpls/godo/core/orm` |
+| `id` | `github.com/nathanpls/godo/core/id` |
+| `lifecycle` | `github.com/nathanpls/godo/core/lifecycle` |
+| `password` | `github.com/nathanpls/godo/core/password` |
+| `validate` | `github.com/nathanpls/godo/core/validate` |
+| `ratelimit` | `github.com/nathanpls/godo/core/http/plugins/ratelimit` |
+| `apikey` | `github.com/nathanpls/godo/core/http/plugins/apikey` |
+| `agentapi` | `github.com/nathanpls/godo/core/http/plugins/agentapi` |
+| `idempotency` | `github.com/nathanpls/godo/core/http/plugins/idempotency` |
+| `requestid` | `github.com/nathanpls/godo/core/http/plugins/requestid` |
 | `sqlite` | `modernc.org/sqlite` |
 | `postgres` | `github.com/jackc/pgx/v5/stdlib` |
 
@@ -115,7 +130,7 @@ Supported names map to:
 Print the directory of a godo package selected by the current project:
 
 ```sh
-godo source http/plugins/apikey
+godo source core/http/plugins/apikey
 ```
 
 Search all godo Go source for a case-sensitive literal string:
@@ -128,7 +143,7 @@ Restrict the search to one package and include surrounding lines:
 
 ```sh
 godo source search "func (plugin *Plugin) middleware" \
-  --package http/plugins/apikey \
+  --package core/http/plugins/apikey \
   --context 5
 ```
 

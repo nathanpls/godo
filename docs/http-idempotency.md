@@ -1,6 +1,6 @@
 # HTTP Idempotency
 
-Package `github.com/nathanpls/godo/http/plugins/idempotency` coordinates mutation
+Package `github.com/nathanpls/godo/core/http/plugins/idempotency` coordinates mutation
 requests by `Idempotency-Key` and replays a completed response for retries.
 
 ## Install

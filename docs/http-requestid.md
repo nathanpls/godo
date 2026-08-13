@@ -1,6 +1,6 @@
 # HTTP Request IDs
 
-Package `github.com/nathanpls/godo/http/plugins/requestid` attaches a correlation
+Package `github.com/nathanpls/godo/core/http/plugins/requestid` attaches a correlation
 ID to each request and response.
 
 ## Install

@@ -1,13 +1,13 @@
 # HTTP
 
-Package `github.com/nathanpls/godo/http` provides method-aware routing, middleware, JSON responses,
+Package `github.com/nathanpls/godo/core/http` provides method-aware routing, middleware, JSON responses,
 and server-side WebSockets using only the Go standard library.
 
 ```go
 import (
     stdhttp "net/http"
 
-    godohttp "github.com/nathanpls/godo/http"
+    godohttp "github.com/nathanpls/godo/core/http"
 )
 ```
 
@@ -225,3 +225,18 @@ defer conn.Close()
 
 Use `SetReadDeadline` and `SetWriteDeadline` when connections need application
 specific timeout behavior.
+
+`DialWebSocket` opens an RFC 6455 client connection for `ws` or `wss`, validates
+the server handshake, and applies client-role frame masking. The context controls
+dialing and the opening handshake:
+
+```go
+conn, err := godohttp.DialWebSocket(ctx, "wss://example.com/events", nil)
+if err != nil {
+    return err
+}
+defer conn.Close()
+```
+
+Use `Abort` when a protocol requires dropping a resumable connection without a
+normal close frame.

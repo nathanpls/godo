@@ -1,6 +1,6 @@
 # HTTP Agent API
 
-Package `github.com/nathanpls/godo/http/plugins/agentapi` publishes a small,
+Package `github.com/nathanpls/godo/core/http/plugins/agentapi` publishes a small,
 agent-readable discovery contract:
 
 - `/.well-known/godo.json`: service metadata and endpoint locations

@@ -1,6 +1,6 @@
 # Password Hashing
 
-Package `github.com/nathanpls/godo/password` hashes passwords with Argon2id and
+Package `github.com/nathanpls/godo/core/password` hashes passwords with Argon2id and
 stores parameters, salt, and derived key in the standard PHC string format.
 
 ```sh

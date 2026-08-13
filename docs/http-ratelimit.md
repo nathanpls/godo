@@ -1,7 +1,7 @@
 # HTTP Rate Limiting
 
-Package `github.com/nathanpls/godo/http/plugins/ratelimit` installs fixed-window
-request rate limiting on a `godo/http` router.
+Package `github.com/nathanpls/godo/core/http/plugins/ratelimit` installs fixed-window
+request rate limiting on a `godo/core/http` router.
 
 ## In-memory limits
 
@@ -12,8 +12,8 @@ import (
     "log"
     "time"
 
-    godohttp "github.com/nathanpls/godo/http"
-    "github.com/nathanpls/godo/http/plugins/ratelimit"
+    godohttp "github.com/nathanpls/godo/core/http"
+    "github.com/nathanpls/godo/core/http/plugins/ratelimit"
 )
 
 router := godohttp.New()

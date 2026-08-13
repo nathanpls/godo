@@ -4,41 +4,44 @@
 The goal is to own the common building blocks so application development can
 focus on the product instead of repeatedly choosing and integrating libraries.
 
-Packages include HTTP services, agent-facing API primitives, and database access.
-Each area lives in a focused top-level package and remains usable independently.
+Packages include HTTP services, agent-facing API primitives, database access,
+and communication channels. Each package remains usable independently under a
+focused `core` or `channels` group.
 
 ## Packages
 
-- [`godo/http`](./http): method-aware HTTP routing, middleware, JSON responses,
+- [`godo/core/http`](./core/http): method-aware HTTP routing, middleware, JSON responses,
   and WebSockets.
-- [`godo/http/plugins/ratelimit`](./http/plugins/ratelimit): fixed-window request
+- [`godo/channels/discord`](./channels/discord): Discord bot REST operations, Gateway events,
+  threads, reactions, and slash commands.
+- [`godo/core/http/plugins/ratelimit`](./core/http/plugins/ratelimit): fixed-window request
   limits using memory, SQLite, or PostgreSQL.
-- [`godo/http/plugins/apikey`](./http/plugins/apikey): hashed bearer API keys
+- [`godo/core/http/plugins/apikey`](./core/http/plugins/apikey): hashed bearer API keys
   with scopes, managed through the `godo` CLI.
-- [`godo/http/plugins/agentapi`](./http/plugins/agentapi): discovery manifests,
+- [`godo/core/http/plugins/agentapi`](./core/http/plugins/agentapi): discovery manifests,
   explicit OpenAPI 3.1 contracts, and `llms.txt`.
-- [`godo/http/plugins/idempotency`](./http/plugins/idempotency): bounded,
+- [`godo/core/http/plugins/idempotency`](./core/http/plugins/idempotency): bounded,
   process-local mutation response replay.
-- [`godo/http/plugins/requestid`](./http/plugins/requestid): generated or trusted
+- [`godo/core/http/plugins/requestid`](./core/http/plugins/requestid): generated or trusted
   request correlation IDs.
-- [`godo/orm`](./orm): driver-neutral SQLite and PostgreSQL models, migrations,
+- [`godo/core/orm`](./core/orm): driver-neutral SQLite and PostgreSQL models, migrations,
   CRUD, queries, and transactions.
-- [`godo/id`](./id): opaque cryptographically random resource identifiers.
-- [`godo/lifecycle`](./lifecycle): coordinated services and bounded graceful
+- [`godo/core/id`](./core/id): opaque cryptographically random resource identifiers.
+- [`godo/core/lifecycle`](./core/lifecycle): coordinated services and bounded graceful
   shutdown.
-- [`godo/password`](./password): Argon2id password hashing, verification, and
+- [`godo/core/password`](./core/password): Argon2id password hashing, verification, and
   rehash detection.
-- [`godo/validate`](./validate): explicit validation for request and domain data.
+- [`godo/core/validate`](./core/validate): explicit validation for request and domain data.
 
 ## Roadmap
 
 Production-grade API building blocks, preferring godo and the standard library
 over additional dependencies:
 
-- [x] HTTP routing and middleware (`godo/http`, `net/http`)
+- [x] HTTP routing and middleware (`godo/core/http`, `net/http`)
 - [x] JSON and RFC 9457 problem responses
-- [x] PostgreSQL and SQLite database access (`godo/orm` plus a SQL driver)
-- [x] Models, CRUD, queries, and transactions (`godo/orm`)
+- [x] PostgreSQL and SQLite database access (`godo/core/orm` plus a SQL driver)
+- [x] Models, CRUD, queries, and transactions (`godo/core/orm`)
 - [x] Database migration generation and execution (`godo db`)
 - [x] API key authentication and scopes
 - [x] Request IDs, rate limiting, and idempotency
@@ -77,6 +80,14 @@ cd my-api
 godo add http
 ```
 
+Generate a Discord bot starter when that application shape is wanted:
+
+```sh
+godo init my-bot --module github.com/example/my-bot --template discord
+cd my-bot
+godo add discord
+```
+
 `godo init` creates `go.mod`, `main.go`, and `.gitignore` in an empty directory.
 `godo add` runs `go get` for a known godo package or SQL driver without editing
 application source. Use `godo <command> --help` for command-specific guidance.
@@ -84,9 +95,9 @@ application source. Use `godo <command> --help` for command-specific guidance.
 Resolve or search the exact godo source selected by the current codebase:
 
 ```sh
-godo source http/plugins/apikey
+godo source core/http/plugins/apikey
 godo source search "func (plugin *Plugin) middleware" \
-  --package http/plugins/apikey --context 5
+  --package core/http/plugins/apikey --context 5
 ```
 
 The command follows the project's selected godo version, workspace, and local
@@ -158,9 +169,11 @@ The repository is one Go module containing independent packages:
 
 ```text
 godo/
-├── go.mod
-├── doc.go
-└── <package>/
+├── channels/   # external communication integrations
+├── core/       # reusable service building blocks
+├── cli/
+├── docs/
+└── go.mod
 ```
 
 This single-module layout keeps local development, versioning, and releases

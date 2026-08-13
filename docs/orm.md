@@ -1,6 +1,6 @@
 # ORM
 
-Package `github.com/nathanpls/godo/orm` maps Go structs to SQLite and PostgreSQL through the standard
+Package `github.com/nathanpls/godo/core/orm` maps Go structs to SQLite and PostgreSQL through the standard
 `database/sql` package. It provides schema creation, CRUD, safe filters,
 transactions, and raw SQL access.
 
@@ -21,7 +21,7 @@ go get modernc.org/sqlite
 import (
     "database/sql"
 
-    "github.com/nathanpls/godo/orm"
+    "github.com/nathanpls/godo/core/orm"
     _ "modernc.org/sqlite"
 )
 
@@ -46,7 +46,7 @@ go get github.com/jackc/pgx/v5/stdlib
 import (
     "database/sql"
 
-    "github.com/nathanpls/godo/orm"
+    "github.com/nathanpls/godo/core/orm"
     _ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -168,8 +168,8 @@ Edit `db/godo/main.go` and import application model packages:
 package main
 
 import (
-    "github.com/nathanpls/godo/orm"
-    "github.com/nathanpls/godo/orm/dbtool"
+    "github.com/nathanpls/godo/core/orm"
+    "github.com/nathanpls/godo/core/orm/dbtool"
 
     _ "modernc.org/sqlite"
 

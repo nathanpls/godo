@@ -1,7 +1,7 @@
 # Request Validation
 
-Package `github.com/nathanpls/godo/validate` provides explicit, reflection-free
-field validation. `godo/http.DecodeJSON` strictly decodes bounded JSON requests.
+Package `github.com/nathanpls/godo/core/validate` provides explicit, reflection-free
+field validation. `godo/core/http.DecodeJSON` strictly decodes bounded JSON requests.
 
 ```sh
 godo add validate

@@ -1,6 +1,6 @@
 # Service Lifecycle
 
-Package `github.com/nathanpls/godo/lifecycle` runs service components under one
+Package `github.com/nathanpls/godo/core/lifecycle` runs service components under one
 cancellation context and performs bounded concurrent shutdown.
 
 ```sh

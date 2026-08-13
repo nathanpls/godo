@@ -1,6 +1,6 @@
 # IDs
 
-Package `github.com/nathanpls/godo/id` creates opaque, URL-safe identifiers with
+Package `github.com/nathanpls/godo/core/id` creates opaque, URL-safe identifiers with
 at least 128 bits of cryptographic randomness using Go's standard library.
 
 ```sh

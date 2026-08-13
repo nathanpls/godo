@@ -1,7 +1,7 @@
 # HTTP API Key Authentication
 
-Package `github.com/nathanpls/godo/http/plugins/apikey` installs bearer API key
-authentication on a `godo/http` router.
+Package `github.com/nathanpls/godo/core/http/plugins/apikey` installs bearer API key
+authentication on a `godo/core/http` router.
 
 ## Add the package
 
@@ -59,8 +59,8 @@ agent's secret configuration immediately; it cannot be recovered from
 import (
     "log"
 
-    godohttp "github.com/nathanpls/godo/http"
-    "github.com/nathanpls/godo/http/plugins/apikey"
+    godohttp "github.com/nathanpls/godo/core/http"
+    "github.com/nathanpls/godo/core/http/plugins/apikey"
 )
 
 router := godohttp.New()
