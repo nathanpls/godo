@@ -4,8 +4,13 @@
 The goal is to own the common building blocks so application development can
 focus on the product instead of repeatedly choosing and integrating libraries.
 
-Planned areas include database access, HTTP services, and rate limiting. Each
-area will live in a focused top-level package and remain usable independently.
+Packages include HTTP services, with database access and rate limiting planned.
+Each area lives in a focused top-level package and remains usable independently.
+
+## Packages
+
+- [`godo/http`](./http): method-aware HTTP routing, middleware, and JSON
+  responses.
 
 ## Principles
 
