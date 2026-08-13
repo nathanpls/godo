@@ -79,6 +79,27 @@ func TestServiceLifecycle(t *testing.T) {
 		t.Fatalf("restart calls = %d, want 1", len(supervisor.restarted))
 	}
 
+	if err := application.run([]string{"service", "edit", "1", "--name", "updated", "--additions", "new instructions"}); err != nil {
+		t.Fatal(err)
+	}
+	if len(supervisor.installed) != 1 || len(supervisor.restarted) != 1 || len(supervisor.removed) != 0 {
+		t.Fatalf("edit called supervisor: installed=%d restarted=%d removed=%d", len(supervisor.installed), len(supervisor.restarted), len(supervisor.removed))
+	}
+	edited, err := application.store.load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if edited.Services[0].Name != "updated" || edited.Services[0].Additions != "new instructions" {
+		t.Fatalf("edited service = %+v", edited.Services[0])
+	}
+	agentContent, err = os.ReadFile(application.agentsFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(agentContent), "| 1 | updated |") || !strings.Contains(string(agentContent), "new instructions") {
+		t.Fatalf("AGENTS.md was not updated:\n%s", agentContent)
+	}
+
 	if err := application.run([]string{"service", "remove", "1"}); err != nil {
 		t.Fatal(err)
 	}
@@ -101,6 +122,19 @@ func TestParseAddAcceptsOptionsAroundTarget(t *testing.T) {
 	}
 	if options.target != "./docs" || options.name != "docs" || options.port != 8080 || options.additions != "markdown" {
 		t.Fatalf("options = %+v", options)
+	}
+}
+
+func TestParseServiceEditCanClearAdditions(t *testing.T) {
+	options, err := parseServiceEdit([]string{"1", "--additions", ""})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if options.id != 1 || !options.additionsSet || options.additions != "" || options.nameSet {
+		t.Fatalf("options = %+v", options)
+	}
+	if _, err := parseServiceEdit([]string{"1"}); err == nil {
+		t.Fatal("edit without changes was accepted")
 	}
 }
 

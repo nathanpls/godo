@@ -152,6 +152,48 @@ func (a *app) remove(id int) error {
 	return nil
 }
 
+func (a *app) edit(options serviceEditOptions) error {
+	unlock, err := a.store.lock()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
+	value, err := a.store.load()
+	if err != nil {
+		return err
+	}
+	index := -1
+	for i, candidate := range value.Services {
+		if candidate.ID == options.id {
+			index = i
+			break
+		}
+	}
+	if index < 0 {
+		return fmt.Errorf("service %d does not exist", options.id)
+	}
+	if options.nameSet {
+		for _, candidate := range value.Services {
+			if candidate.ID != options.id && candidate.Name == options.name {
+				return fmt.Errorf("service name %q is already in use", options.name)
+			}
+		}
+		value.Services[index].Name = options.name
+	}
+	if options.additionsSet {
+		value.Services[index].Additions = options.additions
+	}
+	if err := a.store.save(value); err != nil {
+		return err
+	}
+	if err := syncAgents(a.agentsFile, value.Services); err != nil {
+		return fmt.Errorf("service metadata updated, but agent discovery failed: %w", err)
+	}
+	fmt.Fprintf(a.stdout, "Edited service %d: %s\n", value.Services[index].ID, value.Services[index].Name)
+	return nil
+}
+
 func (a *app) syncAgentsAndPrint() error {
 	unlock, err := a.store.lock()
 	if err != nil {

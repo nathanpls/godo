@@ -17,6 +17,7 @@ func TestCommandHelp(t *testing.T) {
 		{[]string{"auth", "create", "--help"}, []string{"--name", "displayed once"}},
 		{[]string{"service", "--help"}, []string{"Manage persistent", "update", "remove"}},
 		{[]string{"service", "add", "--help"}, []string{"godo service add", "--additions"}},
+		{[]string{"service", "edit", "--help"}, []string{"godo service edit", "without rebuilding", "use \"\" to clear"}},
 		{[]string{"db", "--help"}, []string{"Generate and run", "generate", "rollback"}},
 		{[]string{"db", "init", "--help"}, []string{"--dialect", "sqlite", "postgres"}},
 		{[]string{"db", "generate", "--help"}, []string{"schema.lock.json", "--empty"}},

@@ -128,6 +128,15 @@ func (a *app) runService(args []string) error {
 			return fmt.Errorf("service update: %w", err)
 		}
 		return a.update(id)
+	case "edit":
+		if isHelp(args[1:]) {
+			return printHelp(a.stdout, serviceEditHelp)
+		}
+		options, err := parseServiceEdit(args[1:])
+		if err != nil {
+			return err
+		}
+		return a.edit(options)
 	case "remove", "rm":
 		if isHelp(args[1:]) {
 			return printHelp(a.stdout, serviceRemoveHelp)
@@ -140,6 +149,63 @@ func (a *app) runService(args []string) error {
 	default:
 		return fmt.Errorf("unknown service command %q", args[0])
 	}
+}
+
+type serviceEditOptions struct {
+	id           int
+	name         string
+	additions    string
+	nameSet      bool
+	additionsSet bool
+}
+
+func parseServiceEdit(arguments []string) (serviceEditOptions, error) {
+	var options serviceEditOptions
+	for i := 0; i < len(arguments); i++ {
+		argument := arguments[i]
+		name, inline, hasInline := strings.Cut(argument, "=")
+		switch name {
+		case "--name", "--additions":
+			value := inline
+			if !hasInline {
+				i++
+				if i >= len(arguments) {
+					return serviceEditOptions{}, fmt.Errorf("%s requires a value", name)
+				}
+				value = arguments[i]
+			}
+			if name == "--name" {
+				options.name, options.nameSet = value, true
+			} else {
+				options.additions, options.additionsSet = value, true
+			}
+		default:
+			if strings.HasPrefix(argument, "-") {
+				return serviceEditOptions{}, fmt.Errorf("unknown service edit option %q", argument)
+			}
+			if options.id != 0 {
+				return serviceEditOptions{}, errors.New("service edit accepts one service ID")
+			}
+			id, err := strconv.Atoi(argument)
+			if err != nil || id < 1 {
+				return serviceEditOptions{}, fmt.Errorf("invalid service ID %q", argument)
+			}
+			options.id = id
+		}
+	}
+	if options.id == 0 {
+		return serviceEditOptions{}, errors.New("service edit requires a service ID")
+	}
+	if !options.nameSet && !options.additionsSet {
+		return serviceEditOptions{}, errors.New("service edit requires --name or --additions")
+	}
+	if options.nameSet && strings.TrimSpace(options.name) == "" {
+		return serviceEditOptions{}, errors.New("service name must not be empty")
+	}
+	if strings.ContainsAny(options.name, "\r\n|") {
+		return serviceEditOptions{}, errors.New("service name must not contain newlines or pipes")
+	}
+	return options, nil
 }
 
 type addOptions struct {

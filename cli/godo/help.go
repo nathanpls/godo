@@ -97,6 +97,7 @@ Commands:
   add       Build and start a Go service
   list      List managed services
   update    Rebuild and restart a service
+  edit      Change a service name or agent additions
   remove    Stop and remove a service
 
 Run "godo service <command> --help" for command-specific help.`
@@ -122,6 +123,17 @@ const serviceUpdateHelp = `Rebuild the original target and restart its service.
 
 Usage:
   godo service update <id>`
+
+const serviceEditHelp = `Change service metadata without rebuilding or restarting it.
+
+Usage:
+  godo service edit <id> [--name <name>] [--additions <text>]
+
+Options:
+  --name <name>          Replace the human-readable service name
+  --additions <text>     Replace agent usage instructions; use "" to clear them
+
+The registry and managed AGENTS.md block are updated immediately.`
 
 const serviceRemoveHelp = `Stop, disable, and remove a managed service.
 

@@ -161,6 +161,26 @@ godo service update 1
 The new binary is built before the running service is changed. If the updated
 service cannot restart, godo restores and restarts the previous binary.
 
+## Edit service metadata
+
+Change the name or agent instructions without rebuilding or restarting the
+service:
+
+```sh
+godo service edit 1 \
+  --name "godo library docs" \
+  --additions "Use Accept: text/markdown for agent-friendly documentation"
+```
+
+Clear additions with:
+
+```sh
+godo service edit 1 --additions ""
+```
+
+The registry and managed `<godo>` block in the global `AGENTS.md` are updated
+immediately.
+
 ## Remove a service
 
 ```sh
