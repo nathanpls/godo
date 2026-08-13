@@ -64,23 +64,33 @@ func main() {
 `
 
 func (a *app) runDB(arguments []string) error {
-	if len(arguments) == 0 {
-		return errors.New("db requires init, generate, migrate, rollback, or status")
+	if len(arguments) == 0 || isHelp(arguments) {
+		return printHelp(a.stdout, dbHelp)
 	}
 	switch arguments[0] {
 	case "init":
+		if isHelp(arguments[1:]) {
+			return printHelp(a.stdout, dbInitHelp)
+		}
 		dialect, err := parseDBInit(arguments[1:])
 		if err != nil {
 			return err
 		}
 		return a.initDB(dialect)
 	case "generate":
+		if isHelp(arguments[1:]) {
+			return printHelp(a.stdout, dbGenerateHelp)
+		}
 		name, empty, err := parseDBGenerate(arguments[1:])
 		if err != nil {
 			return err
 		}
 		return a.generateDB(name, empty)
 	case "migrate", "rollback", "status":
+		if isHelp(arguments[1:]) {
+			help := map[string]string{"migrate": dbMigrateHelp, "rollback": dbRollbackHelp, "status": dbStatusHelp}
+			return printHelp(a.stdout, help[arguments[0]])
+		}
 		if len(arguments) != 1 {
 			return fmt.Errorf("db %s does not accept arguments", arguments[0])
 		}

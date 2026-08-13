@@ -12,26 +12,13 @@ import (
 	"text/tabwriter"
 )
 
-const usage = `Usage:
-  godo service add <target> [--name <name>] [--port <port>] [--additions <text>]
-  godo service list
-  godo service update <id>
-  godo service remove <id>
-  godo db init --dialect <sqlite|postgres>
-  godo db generate <name> [--empty]
-  godo db migrate
-  godo db rollback
-  godo db status
-  godo agent
-
-Targets may be Go package directories, package paths, or .go files.`
-
 type app struct {
 	store      store
 	supervisor supervisor
 	agentsFile string
 	stdout     io.Writer
 	cwd        string
+	goGet      func(string, string) error
 }
 
 func newApp() (*app, error) {
@@ -56,6 +43,7 @@ func newApp() (*app, error) {
 		agentsFile: filepath.Join(configDir, "opencode", "AGENTS.md"),
 		stdout:     os.Stdout,
 		cwd:        cwd,
+		goGet:      runGoGet,
 	}, nil
 }
 
@@ -71,49 +59,77 @@ func userDataDir() (string, error) {
 }
 
 func (a *app) run(args []string) error {
-	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
-		fmt.Fprintln(a.stdout, usage)
-		return nil
+	if len(args) == 0 || isHelp(args) {
+		return printHelp(a.stdout, rootHelp)
 	}
 
 	switch args[0] {
+	case "init":
+		if isHelp(args[1:]) {
+			return printHelp(a.stdout, initHelp)
+		}
+		options, err := parseProjectInit(args[1:])
+		if err != nil {
+			return err
+		}
+		return a.initProject(options)
+	case "add":
+		if isHelp(args[1:]) {
+			return printHelp(a.stdout, addHelp)
+		}
+		return a.addDependency(args[1:])
 	case "service":
 		return a.runService(args[1:])
 	case "db":
 		return a.runDB(args[1:])
 	case "agent":
+		if isHelp(args[1:]) {
+			return printHelp(a.stdout, agentHelp)
+		}
 		if len(args) != 1 {
 			return errors.New("agent does not accept arguments")
 		}
 		return a.syncAgentsAndPrint()
 	default:
-		return fmt.Errorf("unknown command %q\n\n%s", args[0], usage)
+		return fmt.Errorf("unknown command %q; run godo --help", args[0])
 	}
 }
 
 func (a *app) runService(args []string) error {
-	if len(args) == 0 {
-		return errors.New("service requires add, list, update, or remove")
+	if len(args) == 0 || isHelp(args) {
+		return printHelp(a.stdout, serviceHelp)
 	}
 	switch args[0] {
 	case "add":
+		if isHelp(args[1:]) {
+			return printHelp(a.stdout, serviceAddHelp)
+		}
 		options, err := parseAdd(args[1:])
 		if err != nil {
 			return err
 		}
 		return a.add(options)
 	case "list", "ls":
+		if isHelp(args[1:]) {
+			return printHelp(a.stdout, serviceListHelp)
+		}
 		if len(args) != 1 {
 			return errors.New("service list does not accept arguments")
 		}
 		return a.list()
 	case "update":
+		if isHelp(args[1:]) {
+			return printHelp(a.stdout, serviceUpdateHelp)
+		}
 		id, err := parseID(args[1:])
 		if err != nil {
 			return fmt.Errorf("service update: %w", err)
 		}
 		return a.update(id)
 	case "remove", "rm":
+		if isHelp(args[1:]) {
+			return printHelp(a.stdout, serviceRemoveHelp)
+		}
 		id, err := parseID(args[1:])
 		if err != nil {
 			return fmt.Errorf("service remove: %w", err)
