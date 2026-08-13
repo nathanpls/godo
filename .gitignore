@@ -1,0 +1,10 @@
+# Go build and test output
+bin/
+*.out
+*.test
+
+# Local environment and editor files
+.env
+.idea/
+.vscode/
+*.swp
