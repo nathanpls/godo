@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -31,5 +32,21 @@ func TestStoreRoundTrip(t *testing.T) {
 	}
 	if got.NextID != want.NextID || len(got.Services) != 1 || got.Services[0].Name != "docs" {
 		t.Fatalf("registry = %+v, want %+v", got, want)
+	}
+}
+
+func TestStoreLoadsLegacyServiceDefaults(t *testing.T) {
+	directory := t.TempDir()
+	storage := store{configDir: directory}
+	content := `{"next_id":2,"services":[{"id":1,"name":"docs","target":".","work_dir":"/tmp/docs","port":41000}]}`
+	if err := os.WriteFile(filepath.Join(directory, "services.json"), []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	value, err := storage.load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Services[0].Kind != "go" || value.Services[0].BuildDir != "/tmp/docs" {
+		t.Fatalf("legacy service = %+v", value.Services[0])
 	}
 }

@@ -5,7 +5,7 @@ import (
 	"io"
 )
 
-const rootHelp = `godo makes starting and running Go services fast.
+const rootHelp = `godo makes starting and running services fast.
 
 Usage:
   godo <command> [options]
@@ -16,7 +16,7 @@ Commands:
   auth       Manage project API keys
   api        Inspect an API's agent-readiness contract
   issue      Communicate through nathanpls/godo GitHub issues
-  service    Manage persistent local Go services
+  service    Manage persistent local services
   db         Generate and run database migrations
   source     Inspect the godo source selected by this project
   agent      Publish local services to the global AGENTS.md
@@ -205,31 +205,36 @@ const issueReopenHelp = `Reopen an issue in nathanpls/godo.
 Usage:
   godo issue reopen <number> [--comment <text>]`
 
-const serviceHelp = `Manage persistent local Go services through systemd --user.
+const serviceHelp = `Manage persistent local services through systemd --user.
 
 Usage:
   godo service <command>
 
 Commands:
-  add       Build and start a Go service
+  add       Build or copy and start a service
   list      List managed services
   update    Rebuild and restart a service
-  edit      Change a service name or agent additions
+  restart   Restart without rebuilding
+  edit      Change service metadata or runtime settings
   remove    Stop and remove a service
 
 Run "godo service <command> --help" for command-specific help.`
 
-const serviceAddHelp = `Build a Go target and start it as a persistent local service.
+const serviceAddHelp = `Build a Go target or copy an executable and start it as a service.
 
 Usage:
-  godo service add <target> [--name <name>] [--port <port>] [--additions <text>]
+  godo service add <target> [options] [-- <arguments...>]
 
 Options:
   --name <name>          Human-readable service name
   --port <port>          Fixed port; defaults to a free port in 41000-41999
   --additions <text>     Usage instructions published to agents
+  --workdir <path>       Runtime directory; defaults from the target
+  --env-file <path>      Protected environment file, normally mode 0600
+  --no-agent             Do not publish the service in the managed AGENTS.md block
 
-Targets may be Go package directories, package paths, or .go files.`
+Targets may be Go package directories, package paths, .go files, or executable
+files. Arguments after -- are passed exactly, without shell expansion.`
 
 const serviceListHelp = `List managed local services.
 
@@ -241,16 +246,28 @@ const serviceUpdateHelp = `Rebuild the original target and restart its service.
 Usage:
   godo service update <id>`
 
-const serviceEditHelp = `Change service metadata without rebuilding or restarting it.
+const serviceRestartHelp = `Restart a service without rebuilding or copying its executable.
 
 Usage:
-  godo service edit <id> [--name <name>] [--additions <text>]
+  godo service restart <id>
+
+Use restart after changing the contents of a configured environment file.`
+
+const serviceEditHelp = `Change service metadata or runtime settings.
+
+Usage:
+  godo service edit <id> [options] [-- <arguments...>]
 
 Options:
   --name <name>          Replace the human-readable service name
   --additions <text>     Replace agent usage instructions; use "" to clear them
+  --workdir <path>       Replace the runtime working directory
+  --env-file <path>      Replace the environment file; use "" to clear it
+  --agent                Publish the service to agents
+  --no-agent             Exclude the service from agent discovery
 
-The registry and managed AGENTS.md block are updated immediately.`
+Runtime changes regenerate and restart the unit. Arguments after -- replace the
+stored argument list; an empty list clears it.`
 
 const serviceRemoveHelp = `Stop, disable, and remove a managed service.
 

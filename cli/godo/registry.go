@@ -11,12 +11,17 @@ import (
 )
 
 type service struct {
-	ID        int    `json:"id"`
-	Name      string `json:"name"`
-	Target    string `json:"target"`
-	WorkDir   string `json:"work_dir"`
-	Port      int    `json:"port"`
-	Additions string `json:"additions,omitempty"`
+	ID        int      `json:"id"`
+	Name      string   `json:"name"`
+	Kind      string   `json:"kind,omitempty"`
+	Target    string   `json:"target"`
+	BuildDir  string   `json:"build_dir,omitempty"`
+	WorkDir   string   `json:"work_dir"`
+	Args      []string `json:"args,omitempty"`
+	EnvFile   string   `json:"env_file,omitempty"`
+	NoAgent   bool     `json:"no_agent,omitempty"`
+	Port      int      `json:"port"`
+	Additions string   `json:"additions,omitempty"`
 }
 
 type registry struct {
@@ -70,6 +75,14 @@ func (s store) load() (registry, error) {
 		result.NextID = 1
 		for _, service := range result.Services {
 			result.NextID = max(result.NextID, service.ID+1)
+		}
+	}
+	for i := range result.Services {
+		if result.Services[i].Kind == "" {
+			result.Services[i].Kind = "go"
+		}
+		if result.Services[i].BuildDir == "" {
+			result.Services[i].BuildDir = result.Services[i].WorkDir
 		}
 	}
 	slices.SortFunc(result.Services, func(a, b service) int { return a.ID - b.ID })

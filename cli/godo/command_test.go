@@ -11,9 +11,15 @@ import (
 )
 
 type fakeSupervisor struct {
-	installed []service
-	restarted []service
-	removed   []service
+	installed  []service
+	configured []service
+	restarted  []service
+	removed    []service
+}
+
+func (s *fakeSupervisor) configure(service service, _ string) error {
+	s.configured = append(s.configured, service)
+	return nil
 }
 
 func (s *fakeSupervisor) install(service service, _ string) error {
@@ -116,11 +122,11 @@ func TestServiceLifecycle(t *testing.T) {
 }
 
 func TestParseAddAcceptsOptionsAroundTarget(t *testing.T) {
-	options, err := parseAdd([]string{"--name=docs", "./docs", "--port", "8080", "--additions", "markdown"})
+	options, err := parseAdd([]string{"--name=docs", "./docs", "--port", "8080", "--additions", "markdown", "--workdir", "./run", "--env-file=.env", "--no-agent", "--", "discord", "discord.json", "--verbose"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if options.target != "./docs" || options.name != "docs" || options.port != 8080 || options.additions != "markdown" {
+	if options.target != "./docs" || options.name != "docs" || options.port != 8080 || options.additions != "markdown" || options.workDir != "./run" || options.envFile != ".env" || !options.noAgent || strings.Join(options.args, "|") != "discord|discord.json|--verbose" {
 		t.Fatalf("options = %+v", options)
 	}
 }
@@ -135,6 +141,130 @@ func TestParseServiceEditCanClearAdditions(t *testing.T) {
 	}
 	if _, err := parseServiceEdit([]string{"1"}); err == nil {
 		t.Fatal("edit without changes was accepted")
+	}
+}
+
+func TestParseServiceEditRuntimeSettings(t *testing.T) {
+	options, err := parseServiceEdit([]string{"1", "--workdir", "./run", "--env-file=", "--no-agent", "--", "discord", "discord.json"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !options.workDirSet || !options.envFileSet || !options.agentSet || !options.noAgent || !options.argsSet || strings.Join(options.args, "|") != "discord|discord.json" {
+		t.Fatalf("options = %+v", options)
+	}
+	cleared, err := parseServiceEdit([]string{"1", "--"})
+	if err != nil || !cleared.argsSet || len(cleared.args) != 0 {
+		t.Fatalf("clear args = %+v, %v", cleared, err)
+	}
+}
+
+func TestExecutableServiceLifecycle(t *testing.T) {
+	directory := t.TempDir()
+	executable := filepath.Join(directory, "godex")
+	if err := os.WriteFile(executable, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	envFile := filepath.Join(directory, "discord.env")
+	if err := os.WriteFile(envFile, []byte("DISCORD_BOT_TOKEN=secret\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	port := freePort(t)
+	supervisor := &fakeSupervisor{}
+	application := &app{
+		store:      store{configDir: filepath.Join(directory, "config"), dataDir: filepath.Join(directory, "data")},
+		supervisor: supervisor, agentsFile: filepath.Join(directory, "AGENTS.md"), stdout: &bytes.Buffer{}, cwd: directory,
+	}
+	if err := application.run([]string{"service", "add", executable, "--port", fmt.Sprint(port), "--env-file", envFile, "--no-agent", "--", "discord", "discord.json"}); err != nil {
+		t.Fatal(err)
+	}
+	value, err := application.store.load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	service := value.Services[0]
+	if service.Kind != "executable" || service.Target != executable || service.WorkDir != directory || service.EnvFile != envFile || !service.NoAgent || strings.Join(service.Args, "|") != "discord|discord.json" {
+		t.Fatalf("service = %+v", service)
+	}
+	managed, err := os.ReadFile(application.binaryPath(1))
+	if err != nil || string(managed) != "#!/bin/sh\nexit 0\n" {
+		t.Fatalf("managed executable = %q, %v", managed, err)
+	}
+	registryContent, err := os.ReadFile(filepath.Join(directory, "config", "services.json"))
+	if err != nil || strings.Contains(string(registryContent), "secret") {
+		t.Fatalf("registry contains environment secret: %q, %v", registryContent, err)
+	}
+	agents, err := os.ReadFile(application.agentsFile)
+	if err != nil || strings.Contains(string(agents), service.Name) || !strings.Contains(string(agents), "No local services") {
+		t.Fatalf("AGENTS.md = %q, %v", agents, err)
+	}
+	if err := os.WriteFile(executable, []byte("#!/bin/sh\nexit 1\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := application.run([]string{"service", "update", "1"}); err != nil {
+		t.Fatal(err)
+	}
+	managed, err = os.ReadFile(application.binaryPath(1))
+	if err != nil || string(managed) != "#!/bin/sh\nexit 1\n" {
+		t.Fatalf("updated executable = %q, %v", managed, err)
+	}
+	if err := application.run([]string{"service", "restart", "1"}); err != nil {
+		t.Fatal(err)
+	}
+	if len(supervisor.restarted) != 2 {
+		t.Fatalf("restart calls = %d", len(supervisor.restarted))
+	}
+	if err := application.run([]string{"service", "edit", "1", "--agent", "--", "discord", "other.json"}); err != nil {
+		t.Fatal(err)
+	}
+	if len(supervisor.configured) != 1 || supervisor.configured[0].NoAgent || strings.Join(supervisor.configured[0].Args, "|") != "discord|other.json" {
+		t.Fatalf("configured = %+v", supervisor.configured)
+	}
+	output := application.stdout.(*bytes.Buffer)
+	output.Reset()
+	if err := application.run([]string{"service", "list"}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(output.String(), `"discord" "other.json"`) || !strings.Contains(output.String(), "AGENT") {
+		t.Fatalf("service list = %q", output.String())
+	}
+}
+
+func TestEnvironmentFileRequiresPrivatePermissions(t *testing.T) {
+	directory := t.TempDir()
+	path := filepath.Join(directory, "service.env")
+	if err := os.WriteFile(path, []byte("TOKEN=secret\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := resolveEnvFile(directory, path); err == nil {
+		t.Fatal("public environment file was accepted")
+	}
+	if err := os.Chmod(path, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	resolved, err := resolveEnvFile(directory, "service.env")
+	if err != nil || resolved != path {
+		t.Fatalf("resolved = %q, %v", resolved, err)
+	}
+	if err := os.WriteFile(path, []byte("PORT=9999\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := resolveEnvFile(directory, path); err == nil {
+		t.Fatal("environment file defining PORT was accepted")
+	}
+}
+
+func TestResolveExecutableTarget(t *testing.T) {
+	directory := t.TempDir()
+	target := filepath.Join(directory, "tool")
+	if err := os.WriteFile(target, []byte("binary"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	resolved, err := resolveTarget(directory, "tool")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resolved.kind != "executable" || resolved.target != target || resolved.workDir != directory {
+		t.Fatalf("resolved = %+v", resolved)
 	}
 }
 

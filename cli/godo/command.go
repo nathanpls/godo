@@ -137,6 +137,15 @@ func (a *app) runService(args []string) error {
 			return fmt.Errorf("service update: %w", err)
 		}
 		return a.update(id)
+	case "restart":
+		if isHelp(args[1:]) {
+			return printHelp(a.stdout, serviceRestartHelp)
+		}
+		id, err := parseID(args[1:])
+		if err != nil {
+			return fmt.Errorf("service restart: %w", err)
+		}
+		return a.restart(id)
 	case "edit":
 		if isHelp(args[1:]) {
 			return printHelp(a.stdout, serviceEditHelp)
@@ -164,17 +173,30 @@ type serviceEditOptions struct {
 	id           int
 	name         string
 	additions    string
+	workDir      string
+	envFile      string
+	args         []string
+	noAgent      bool
 	nameSet      bool
 	additionsSet bool
+	workDirSet   bool
+	envFileSet   bool
+	argsSet      bool
+	agentSet     bool
 }
 
 func parseServiceEdit(arguments []string) (serviceEditOptions, error) {
 	var options serviceEditOptions
 	for i := 0; i < len(arguments); i++ {
 		argument := arguments[i]
+		if argument == "--" {
+			options.args = append([]string(nil), arguments[i+1:]...)
+			options.argsSet = true
+			break
+		}
 		name, inline, hasInline := strings.Cut(argument, "=")
 		switch name {
-		case "--name", "--additions":
+		case "--name", "--additions", "--workdir", "--env-file":
 			value := inline
 			if !hasInline {
 				i++
@@ -183,11 +205,24 @@ func parseServiceEdit(arguments []string) (serviceEditOptions, error) {
 				}
 				value = arguments[i]
 			}
-			if name == "--name" {
+			switch name {
+			case "--name":
 				options.name, options.nameSet = value, true
-			} else {
+			case "--additions":
 				options.additions, options.additionsSet = value, true
+			case "--workdir":
+				options.workDir, options.workDirSet = value, true
+			case "--env-file":
+				options.envFile, options.envFileSet = value, true
 			}
+		case "--agent", "--no-agent":
+			if hasInline {
+				return serviceEditOptions{}, fmt.Errorf("%s does not accept a value", name)
+			}
+			if options.agentSet {
+				return serviceEditOptions{}, errors.New("service edit accepts only one of --agent or --no-agent")
+			}
+			options.noAgent, options.agentSet = name == "--no-agent", true
 		default:
 			if strings.HasPrefix(argument, "-") {
 				return serviceEditOptions{}, fmt.Errorf("unknown service edit option %q", argument)
@@ -205,14 +240,19 @@ func parseServiceEdit(arguments []string) (serviceEditOptions, error) {
 	if options.id == 0 {
 		return serviceEditOptions{}, errors.New("service edit requires a service ID")
 	}
-	if !options.nameSet && !options.additionsSet {
-		return serviceEditOptions{}, errors.New("service edit requires --name or --additions")
+	if !options.nameSet && !options.additionsSet && !options.workDirSet && !options.envFileSet && !options.argsSet && !options.agentSet {
+		return serviceEditOptions{}, errors.New("service edit requires a change")
 	}
 	if options.nameSet && strings.TrimSpace(options.name) == "" {
 		return serviceEditOptions{}, errors.New("service name must not be empty")
 	}
 	if strings.ContainsAny(options.name, "\r\n|") {
 		return serviceEditOptions{}, errors.New("service name must not contain newlines or pipes")
+	}
+	for _, argument := range options.args {
+		if strings.ContainsRune(argument, 0) || strings.ContainsAny(argument, "\r\n") {
+			return serviceEditOptions{}, errors.New("service arguments must not contain NUL bytes or newlines")
+		}
 	}
 	return options, nil
 }
@@ -221,6 +261,10 @@ type addOptions struct {
 	target    string
 	name      string
 	additions string
+	workDir   string
+	envFile   string
+	args      []string
+	noAgent   bool
 	port      int
 }
 
@@ -228,9 +272,13 @@ func parseAdd(args []string) (addOptions, error) {
 	var options addOptions
 	for i := 0; i < len(args); i++ {
 		argument := args[i]
+		if argument == "--" {
+			options.args = append([]string(nil), args[i+1:]...)
+			break
+		}
 		name, inlineValue, hasInlineValue := strings.Cut(argument, "=")
 		switch name {
-		case "--name", "--port", "--additions":
+		case "--name", "--port", "--additions", "--workdir", "--env-file":
 			value := inlineValue
 			if !hasInlineValue {
 				i++
@@ -244,6 +292,10 @@ func parseAdd(args []string) (addOptions, error) {
 				options.name = value
 			case "--additions":
 				options.additions = value
+			case "--workdir":
+				options.workDir = value
+			case "--env-file":
+				options.envFile = value
 			case "--port":
 				port, err := strconv.Atoi(value)
 				if err != nil || port < 1 || port > 65535 {
@@ -251,6 +303,11 @@ func parseAdd(args []string) (addOptions, error) {
 				}
 				options.port = port
 			}
+		case "--no-agent":
+			if hasInlineValue {
+				return addOptions{}, errors.New("--no-agent does not accept a value")
+			}
+			options.noAgent = true
 		default:
 			if strings.HasPrefix(argument, "-") {
 				return addOptions{}, fmt.Errorf("unknown option %q", argument)
@@ -267,6 +324,11 @@ func parseAdd(args []string) (addOptions, error) {
 	if strings.ContainsAny(options.name, "\r\n|") {
 		return addOptions{}, errors.New("service name must not contain newlines or pipes")
 	}
+	for _, argument := range options.args {
+		if strings.ContainsRune(argument, 0) || strings.ContainsAny(argument, "\r\n") {
+			return addOptions{}, errors.New("service arguments must not contain NUL bytes or newlines")
+		}
+	}
 	return options, nil
 }
 
@@ -281,7 +343,15 @@ func parseID(args []string) (int, error) {
 	return id, nil
 }
 
-func resolveTarget(cwd, target string) (string, string, string, error) {
+type resolvedTarget struct {
+	kind        string
+	buildDir    string
+	target      string
+	workDir     string
+	defaultName string
+}
+
+func resolveTarget(cwd, target string) (resolvedTarget, error) {
 	path := target
 	if !filepath.IsAbs(path) {
 		path = filepath.Join(cwd, path)
@@ -290,25 +360,31 @@ func resolveTarget(cwd, target string) (string, string, string, error) {
 	if err == nil {
 		absolute, err := filepath.Abs(path)
 		if err != nil {
-			return "", "", "", err
+			return resolvedTarget{}, err
 		}
 		if info.IsDir() {
-			return absolute, ".", filepath.Base(absolute), nil
+			return resolvedTarget{kind: "go", buildDir: absolute, target: ".", workDir: absolute, defaultName: filepath.Base(absolute)}, nil
 		}
-		if filepath.Ext(absolute) != ".go" {
-			return "", "", "", errors.New("service target file must end in .go")
+		if !info.Mode().IsRegular() {
+			return resolvedTarget{}, errors.New("service target must be a directory, Go file, package path, or executable file")
 		}
-		name := strings.TrimSuffix(filepath.Base(absolute), ".go")
-		return filepath.Dir(absolute), filepath.Base(absolute), name, nil
+		if filepath.Ext(absolute) == ".go" {
+			name := strings.TrimSuffix(filepath.Base(absolute), ".go")
+			return resolvedTarget{kind: "go", buildDir: filepath.Dir(absolute), target: filepath.Base(absolute), workDir: filepath.Dir(absolute), defaultName: name}, nil
+		}
+		if info.Mode().Perm()&0o111 == 0 {
+			return resolvedTarget{}, errors.New("service executable target must have an executable bit")
+		}
+		return resolvedTarget{kind: "executable", buildDir: filepath.Dir(absolute), target: absolute, workDir: cwd, defaultName: filepath.Base(absolute)}, nil
 	}
 	if !errors.Is(err, os.ErrNotExist) {
-		return "", "", "", fmt.Errorf("inspect target: %w", err)
+		return resolvedTarget{}, fmt.Errorf("inspect target: %w", err)
 	}
 	if strings.HasPrefix(target, ".") || filepath.IsAbs(target) || strings.HasSuffix(target, ".go") {
-		return "", "", "", fmt.Errorf("target %q does not exist", target)
+		return resolvedTarget{}, fmt.Errorf("target %q does not exist", target)
 	}
 	name := filepath.Base(target)
-	return cwd, target, name, nil
+	return resolvedTarget{kind: "go", buildDir: cwd, target: target, workDir: cwd, defaultName: name}, nil
 }
 
 func choosePort(requested int, services []service) (int, error) {
@@ -352,19 +428,31 @@ func (a *app) list() error {
 	}
 
 	writer := tabwriter.NewWriter(a.stdout, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(writer, "ID\tNAME\tURL\tTARGET\tADDITIONS")
+	fmt.Fprintln(writer, "ID\tNAME\tURL\tCOMMAND\tAGENT\tADDITIONS")
 	for _, service := range value.Services {
-		fmt.Fprintf(writer, "%d\t%s\thttp://localhost:%d\t%s\t%s\n", service.ID, service.Name, service.Port, displayTarget(service), service.Additions)
+		agent := "yes"
+		if service.NoAgent {
+			agent = "no"
+		}
+		fmt.Fprintf(writer, "%d\t%s\thttp://localhost:%d\t%s\t%s\t%s\n", service.ID, service.Name, service.Port, displayCommand(service), agent, service.Additions)
 	}
 	return writer.Flush()
 }
 
+func displayCommand(value service) string {
+	parts := append([]string{displayTarget(value)}, value.Args...)
+	for i := range parts {
+		parts[i] = strconv.Quote(parts[i])
+	}
+	return strings.Join(parts, " ")
+}
+
 func displayTarget(value service) string {
 	if value.Target == "." {
-		return value.WorkDir
+		return value.BuildDir
 	}
 	if filepath.IsAbs(value.Target) {
 		return value.Target
 	}
-	return filepath.Join(value.WorkDir, value.Target)
+	return filepath.Join(value.BuildDir, value.Target)
 }

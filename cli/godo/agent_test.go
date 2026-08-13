@@ -55,3 +55,14 @@ func TestAgentBlockEscapesTableCells(t *testing.T) {
 		t.Fatalf("table values were not escaped:\n%s", block)
 	}
 }
+
+func TestAgentBlockExcludesPrivateServices(t *testing.T) {
+	block := agentBlock([]service{{ID: 1, Name: "private", NoAgent: true}, {ID: 2, Name: "public", Port: 41000}})
+	if strings.Contains(block, "private") || !strings.Contains(block, "public") {
+		t.Fatalf("agent block = %q", block)
+	}
+	private := agentBlock([]service{{ID: 1, Name: "private", NoAgent: true}})
+	if !strings.Contains(private, "No local services") {
+		t.Fatalf("private agent block = %q", private)
+	}
+}

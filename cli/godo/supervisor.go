@@ -12,8 +12,34 @@ import (
 
 type supervisor interface {
 	install(service service, binary string) error
+	configure(service service, binary string) error
 	restart(service service) error
 	remove(service service) error
+}
+
+func (s systemdSupervisor) configure(service service, binary string) error {
+	unitFile := s.unitPath(service.ID)
+	previous, err := os.ReadFile(unitFile)
+	if err != nil {
+		return fmt.Errorf("read current user service: %w", err)
+	}
+	if err := writeAtomic(unitFile, []byte(renderUnit(service, binary)), 0o644); err != nil {
+		return fmt.Errorf("write user service: %w", err)
+	}
+	restore := func() {
+		_ = writeAtomic(unitFile, previous, 0o644)
+		_ = systemctl("daemon-reload")
+		_ = systemctl("restart", s.unitName(service.ID))
+	}
+	if err := systemctl("daemon-reload"); err != nil {
+		restore()
+		return err
+	}
+	if err := s.restart(service); err != nil {
+		restore()
+		return err
+	}
+	return nil
 }
 
 type systemdSupervisor struct {
@@ -44,6 +70,16 @@ func (s systemdSupervisor) install(service service, binary string) error {
 }
 
 func renderUnit(service service, binary string) string {
+	var command strings.Builder
+	command.WriteString(unitQuote(binary))
+	for _, argument := range service.Args {
+		command.WriteByte(' ')
+		command.WriteString(unitQuote(argument))
+	}
+	environmentFile := ""
+	if service.EnvFile != "" {
+		environmentFile = "EnvironmentFile=" + unitPath(service.EnvFile) + "\n"
+	}
 	return fmt.Sprintf(`[Unit]
 Description=godo service %d: %s
 After=network.target
@@ -52,13 +88,13 @@ After=network.target
 Type=simple
 WorkingDirectory=%s
 ExecStart=%s
-Environment=%s
+%sEnvironment=%s
 Restart=on-failure
 RestartSec=2
 
 [Install]
 WantedBy=default.target
-`, service.ID, unitDescription(service.Name), unitPath(service.WorkDir), unitQuote(binary), unitQuote("PORT="+strconv.Itoa(service.Port)))
+`, service.ID, unitDescription(service.Name), unitPath(service.WorkDir), command.String(), environmentFile, unitQuote("PORT="+strconv.Itoa(service.Port)))
 }
 
 func (s systemdSupervisor) restart(service service) error {
@@ -101,6 +137,7 @@ func systemctl(arguments ...string) error {
 
 func unitQuote(value string) string {
 	value = strings.ReplaceAll(value, "%", "%%")
+	value = strings.ReplaceAll(value, "$", "$$")
 	value = strings.ReplaceAll(value, "\\", "\\\\")
 	value = strings.ReplaceAll(value, "\"", "\\\"")
 	return `"` + value + `"`

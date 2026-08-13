@@ -33,6 +33,7 @@ func syncAgents(path string, services []service) error {
 
 func agentBlock(services []service) string {
 	services = slices.Clone(services)
+	services = slices.DeleteFunc(services, func(service service) bool { return service.NoAgent })
 	slices.SortFunc(services, func(a, b service) int { return a.ID - b.ID })
 
 	var result strings.Builder

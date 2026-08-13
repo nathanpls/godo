@@ -1,8 +1,8 @@
 # CLI
 
-The `godo` CLI builds Go programs into persistent local services. Services start
-with the Linux user session, restart after failures, and are published to agents
-through the global OpenCode `AGENTS.md` file.
+The `godo` CLI builds Go programs or copies executables into persistent local
+services. Services start with the Linux user session, restart after failures,
+and can be published to agents through the global OpenCode `AGENTS.md` file.
 
 ## Requirements
 
@@ -245,7 +245,7 @@ Update structured fields or ordinary GitHub metadata with:
 
 ```sh
 godo issue edit 12 \
-  --field reproduce="Run go test ./http -run TestCursor" \
+  --field reproduce="Run go test ./core/http -run TestCursor" \
   --add-label "help wanted"
 ```
 
@@ -260,7 +260,8 @@ deliberately out of scope.
 
 ## Add a service
 
-Pass a Go package directory, package path, or individual `.go` file:
+Pass a Go package directory, package path, individual `.go` file, or existing
+executable:
 
 ```sh
 godo service add ./docs \
@@ -270,7 +271,7 @@ godo service add ./docs \
 
 This command:
 
-1. Builds the target into a standalone binary.
+1. Builds a Go target or copies an executable into managed storage.
 2. Selects the first available port from `41000-41999`.
 3. Installs and starts a `systemd --user` service.
 4. Adds the service URL and usage note to the managed `<godo>` block in the
@@ -285,15 +286,56 @@ godo service add ./docs --name godo-docs --port 8080
 The target is resolved relative to the current directory when it is added. It
 can therefore be rebuilt later regardless of the current shell directory.
 
+Separate application arguments from godo options with `--`. Arguments are
+stored and passed exactly without shell expansion:
+
+```sh
+godo service add ./bin/godex \
+  --name godex-discord \
+  --workdir "$PWD" \
+  --env-file ~/.config/godex/discord.env \
+  -- discord discord.json
+```
+
+An executable is managed as one file. Applications requiring sibling binaries
+must provide a bundled executable or configure a stable absolute helper path.
+For Godex, use `make bundle`; `make build` leaves `codex-app-server` as a sibling
+that is not copied with `bin/godex`.
+
+Relative application paths such as `discord.json` resolve against the runtime
+working directory. Existing executable and package-path targets default to the
+directory where `service add` runs. Go directories default to the target
+directory, and `.go` files default to their parent. Use `--workdir` to make this
+explicit. Godo does not guess which arguments are paths.
+
+Managed services do not inherit the interactive shell environment. Use a
+protected environment file for persistent secrets:
+
+```sh
+mkdir -p ~/.config/godex
+chmod 700 ~/.config/godex
+printf '%s\n' 'DISCORD_BOT_TOKEN=your-token' > ~/.config/godex/discord.env
+chmod 600 ~/.config/godex/discord.env
+```
+
+The env-file path is resolved and stored as an absolute path; its contents are
+never stored by godo. The file must be regular, non-symlink, and inaccessible to
+group and others. `PORT` remains controlled by godo and overrides a value in the
+file.
+
+Use `--no-agent` when a service should remain in the registry and service list
+but not appear in the generated `<godo>` block. Restore discovery later with
+`godo service edit <id> --agent`.
+
 ## List services
 
 ```sh
 godo service list
 ```
 
-The output contains the stable ID, name, local URL, build target, and agent
-instructions for each service. IDs start at `1`, increase monotonically, and are
-not reused after removal.
+The output contains the stable ID, name, local URL, quoted command, agent
+visibility, and agent instructions. IDs start at `1`, increase monotonically,
+and are not reused after removal.
 
 ## Update a service
 
@@ -306,7 +348,13 @@ godo service update 1
 The new binary is built before the running service is changed. If the updated
 service cannot restart, godo restores and restarts the previous binary.
 
-## Edit service metadata
+Restart without rebuilding or recopying after changing env-file contents:
+
+```sh
+godo service restart 1
+```
+
+## Edit a service
 
 Change the name or agent instructions without rebuilding or restarting the
 service:
@@ -323,8 +371,18 @@ Clear additions with:
 godo service edit 1 --additions ""
 ```
 
-The registry and managed `<godo>` block in the global `AGENTS.md` are updated
-immediately.
+Runtime settings and arguments can also be replaced:
+
+```sh
+godo service edit 1 \
+  --workdir "$PWD" \
+  --env-file ~/.config/godex/discord.env \
+  -- discord discord.json
+```
+
+Use `--` with no following values to clear arguments, and `--env-file ""` to
+clear the environment file. Runtime changes regenerate and restart the unit;
+name, additions, and agent-visibility changes only update metadata.
 
 ## Remove a service
 
@@ -344,7 +402,8 @@ manual synchronization with:
 godo agent
 ```
 
-Only content between `<godo>` and `</godo>` is generated. Existing instructions
+Services configured with `--no-agent` are excluded. Only content between
+`<godo>` and `</godo>` is generated. Existing instructions
 outside that block are preserved. A missing block is appended to the file. The
 generated block also tells agents that the `godo` CLI is available and points
 them to `godo --help` and nested command help.

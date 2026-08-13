@@ -122,8 +122,8 @@ godo issue comment 12 --body "Confirmed"
 
 The workflow is intentionally fixed to `nathanpls/godo` during the open alpha.
 
-On Linux, `godo` can build Go programs into persistent `systemd --user`
-services and publish their local URLs to OpenCode agents:
+On Linux, `godo` can build Go programs or copy executables into persistent
+`systemd --user` services and publish their local URLs to OpenCode agents:
 
 ```sh
 godo service add ./docs \
@@ -132,6 +132,7 @@ godo service add ./docs \
 
 godo service list
 godo service update 1
+godo service restart 1
 godo service remove 1
 godo agent
 ```
