@@ -105,6 +105,29 @@ if port == "" {
 log.Fatal(http.ListenAndServe(":"+port, handler))
 ```
 
+## Database migrations
+
+Initialize a compiler-checked SQLite or PostgreSQL schema program:
+
+```sh
+godo db init --dialect sqlite
+godo db init --dialect postgres
+```
+
+Register ORM models in `db/godo/main.go`, install the driver printed by `init`,
+then generate and run migrations:
+
+```sh
+godo db generate create_users
+godo db status
+godo db migrate
+godo db rollback
+```
+
+Use `godo db generate <name> --empty` for explicit custom or data migrations
+when models have not changed. See the [ORM documentation](/orm) for schema
+registration, generated files, supported automatic changes, and safety rules.
+
 ## Files and logs
 
 - Registry: `$XDG_CONFIG_HOME/godo/services.json`, normally

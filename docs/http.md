@@ -1,13 +1,13 @@
 # HTTP
 
-Package `godo/http` provides method-aware routing, middleware, JSON responses,
+Package `github.com/nathanpls/godo/http` provides method-aware routing, middleware, JSON responses,
 and server-side WebSockets using only the Go standard library.
 
 ```go
 import (
     stdhttp "net/http"
 
-    godohttp "godo/http"
+    godohttp "github.com/nathanpls/godo/http"
 )
 ```
 

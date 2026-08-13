@@ -40,6 +40,21 @@ func TestDocsServeCLIPage(t *testing.T) {
 	}
 }
 
+func TestDocsServeORMPage(t *testing.T) {
+	request := httptest.NewRequest(http.MethodGet, "/orm", nil)
+	request.Header.Set("Accept", "text/markdown")
+	response := httptest.NewRecorder()
+
+	docsHandler().ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	if !strings.HasPrefix(response.Body.String(), "# ORM\n") {
+		t.Fatalf("response does not contain the ORM Markdown page")
+	}
+}
+
 func TestDocsServeHTMLForBrowsers(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/http", nil)
 	request.Header.Set("Accept", "text/html,application/xhtml+xml")

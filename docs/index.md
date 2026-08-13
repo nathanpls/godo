@@ -8,6 +8,7 @@ possible.
 
 - [CLI](/cli): persistent local Go services and agent discovery
 - [HTTP](/http): routing, middleware, JSON responses, and WebSockets
+- [ORM](/orm): SQLite and PostgreSQL models, migrations, CRUD, and queries
 
 ## Agent access
 

@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	godohttp "godo/http"
+	godohttp "github.com/nathanpls/godo/http"
 )
 
 //go:embed *.md
@@ -25,6 +25,7 @@ var pages = []page{
 	{Path: "/", Title: "godo", Markdown: readDoc("index.md")},
 	{Path: "/cli", Title: "CLI", Markdown: readDoc("cli.md")},
 	{Path: "/http", Title: "HTTP", Markdown: readDoc("http.md")},
+	{Path: "/orm", Title: "ORM", Markdown: readDoc("orm.md")},
 }
 
 var pageTemplate = template.Must(template.New("page").Parse(`<!doctype html>

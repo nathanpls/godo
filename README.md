@@ -4,13 +4,15 @@
 The goal is to own the common building blocks so application development can
 focus on the product instead of repeatedly choosing and integrating libraries.
 
-Packages include HTTP services, with database access and rate limiting planned.
+Packages include HTTP services and database access, with rate limiting planned.
 Each area lives in a focused top-level package and remains usable independently.
 
 ## Packages
 
 - [`godo/http`](./http): method-aware HTTP routing, middleware, JSON responses,
   and WebSockets.
+- [`godo/orm`](./orm): driver-neutral SQLite and PostgreSQL models, migrations,
+  CRUD, queries, and transactions.
 
 ## CLI
 
@@ -40,6 +42,20 @@ godo agent
 Managed applications receive their assigned port through the `PORT` environment
 variable. See the [CLI documentation](./docs/cli.md) for behavior, storage, and
 logging details.
+
+The CLI also compiles registered ORM models into reviewable SQLite or PostgreSQL
+migrations:
+
+```sh
+godo db init --dialect sqlite
+godo db generate create_users
+godo db status
+godo db migrate
+godo db rollback
+```
+
+See the [ORM documentation](./docs/orm.md) for model registration and migration
+safety rules.
 
 ## Principles
 
