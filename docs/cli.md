@@ -73,6 +73,9 @@ godo add http
 godo add orm
 godo add ratelimit
 godo add apikey
+godo add agentapi
+godo add idempotency
+godo add requestid
 godo add sqlite
 godo add postgres
 ```
@@ -89,6 +92,9 @@ Supported names map to:
 | `orm` | `github.com/nathanpls/godo/orm` |
 | `ratelimit` | `github.com/nathanpls/godo/http/plugins/ratelimit` |
 | `apikey` | `github.com/nathanpls/godo/http/plugins/apikey` |
+| `agentapi` | `github.com/nathanpls/godo/http/plugins/agentapi` |
+| `idempotency` | `github.com/nathanpls/godo/http/plugins/idempotency` |
+| `requestid` | `github.com/nathanpls/godo/http/plugins/requestid` |
 | `sqlite` | `modernc.org/sqlite` |
 | `postgres` | `github.com/jackc/pgx/v5/stdlib` |
 
@@ -141,7 +147,7 @@ godo auth init
 Create, list, and revoke keys:
 
 ```sh
-godo auth create --name opencode
+godo auth create --name opencode --scope plans:read --scope plans:write
 godo auth list
 godo auth revoke 1
 ```
@@ -150,6 +156,18 @@ Secrets are displayed once and only SHA-256 hashes are stored in the ignored
 `.godo/auth.json` file. Key changes take effect without restarting applications
 using the API key plugin. See the [API key documentation](/http/plugins/apikey)
 for installation, request identity, and custom responses.
+
+## Check an agent API
+
+Validate an API's discovery contract without credentials or mutations:
+
+```sh
+godo api check https://api.example.com
+```
+
+The command checks same-origin `/.well-known/godo.json`, OpenAPI 3.1, `llms.txt`,
+optional Markdown documentation, bearer metadata, and request ID headers. Links
+and redirects cannot leave the supplied origin.
 
 ## Add a service
 

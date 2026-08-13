@@ -26,6 +26,9 @@ var pages = []page{
 	{Path: "/cli", Title: "CLI", Markdown: readDoc("cli.md")},
 	{Path: "/http", Title: "HTTP", Markdown: readDoc("http.md")},
 	{Path: "/http/plugins/apikey", Title: "API Keys", Markdown: readDoc("http-apikey.md")},
+	{Path: "/http/plugins/agentapi", Title: "Agent API", Markdown: readDoc("http-agentapi.md")},
+	{Path: "/http/plugins/idempotency", Title: "Idempotency", Markdown: readDoc("http-idempotency.md")},
+	{Path: "/http/plugins/requestid", Title: "Request IDs", Markdown: readDoc("http-requestid.md")},
 	{Path: "/http/plugins/ratelimit", Title: "Rate Limiting", Markdown: readDoc("http-ratelimit.md")},
 	{Path: "/orm", Title: "ORM", Markdown: readDoc("orm.md")},
 }

@@ -4,7 +4,7 @@
 The goal is to own the common building blocks so application development can
 focus on the product instead of repeatedly choosing and integrating libraries.
 
-Packages include HTTP services and database access, with rate limiting planned.
+Packages include HTTP services, agent-facing API primitives, and database access.
 Each area lives in a focused top-level package and remains usable independently.
 
 ## Packages
@@ -14,7 +14,13 @@ Each area lives in a focused top-level package and remains usable independently.
 - [`godo/http/plugins/ratelimit`](./http/plugins/ratelimit): fixed-window request
   limits using memory, SQLite, or PostgreSQL.
 - [`godo/http/plugins/apikey`](./http/plugins/apikey): hashed bearer API keys
-  managed through the `godo` CLI.
+  with scopes, managed through the `godo` CLI.
+- [`godo/http/plugins/agentapi`](./http/plugins/agentapi): discovery manifests,
+  explicit OpenAPI 3.1 contracts, and `llms.txt`.
+- [`godo/http/plugins/idempotency`](./http/plugins/idempotency): bounded,
+  process-local mutation response replay.
+- [`godo/http/plugins/requestid`](./http/plugins/requestid): generated or trusted
+  request correlation IDs.
 - [`godo/orm`](./orm): driver-neutral SQLite and PostgreSQL models, migrations,
   CRUD, queries, and transactions.
 
@@ -51,6 +57,12 @@ godo source search "func (plugin *Plugin) middleware" \
 
 The command follows the project's selected godo version, workspace, and local
 replacements instead of relying on a fixed module-cache path.
+
+Validate an API's agent-readable discovery contract:
+
+```sh
+godo api check https://api.example.com
+```
 
 On Linux, `godo` can build Go programs into persistent `systemd --user`
 services and publish their local URLs to OpenCode agents:

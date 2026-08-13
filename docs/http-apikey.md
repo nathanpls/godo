@@ -36,7 +36,9 @@ file.
 ## Create a key
 
 ```sh
-godo auth create --name opencode
+godo auth create --name opencode \
+  --scope plans:read \
+  --scope plans:write
 ```
 
 Example output:
@@ -99,8 +101,30 @@ router.Post("/api/plans", func(w http.ResponseWriter, r *http.Request) {
 })
 ```
 
-`Key` includes the numeric ID, name, non-secret prefix, and creation time. It
+`Key` includes the numeric ID, name, non-secret prefix, creation time, and
+normalized scopes. It
 never includes the token or hash.
+
+## Require scopes
+
+Create scope middleware once and install it after authentication:
+
+```go
+requirePlansWrite, err := apikey.Require("plans:write")
+if err != nil {
+    log.Fatal(err)
+}
+
+router.Use(requirePlansWrite)
+```
+
+All listed scopes are required. A missing authenticated identity receives `401`;
+a key missing any scope receives `403` with `required_scopes` in the problem
+response. Scope names are deduplicated and sorted when keys are created.
+
+Keys created before scoped auth files, and keys created without `--scope`, can
+authenticate but do not satisfy any `Require` middleware. This preserves
+unscoped APIs without silently granting existing keys new permissions.
 
 ## Public routes
 
@@ -116,8 +140,8 @@ The bypass applies before parsing credentials.
 
 ## Custom responses
 
-The default unauthorized response is plain-text HTTP `401`. APIs can provide a
-JSON response:
+The default unauthorized response is RFC 9457 `application/problem+json` with
+HTTP `401`. APIs can provide a custom response:
 
 ```go
 Unauthorized: func(w http.ResponseWriter, r *http.Request) {

@@ -85,6 +85,22 @@ func TestDocsServeAPIKeyPage(t *testing.T) {
 	}
 }
 
+func TestDocsServeAgentAPIPages(t *testing.T) {
+	for _, test := range []struct{ path, prefix string }{
+		{"/http/plugins/agentapi", "# HTTP Agent API\n"},
+		{"/http/plugins/idempotency", "# HTTP Idempotency\n"},
+		{"/http/plugins/requestid", "# HTTP Request IDs\n"},
+	} {
+		request := httptest.NewRequest(http.MethodGet, test.path, nil)
+		request.Header.Set("Accept", "text/markdown")
+		response := httptest.NewRecorder()
+		docsHandler().ServeHTTP(response, request)
+		if response.Code != http.StatusOK || !strings.HasPrefix(response.Body.String(), test.prefix) {
+			t.Fatalf("%s returned %d %q", test.path, response.Code, response.Body.String())
+		}
+	}
+}
+
 func TestDocsServeHTMLForBrowsers(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/http", nil)
 	request.Header.Set("Accept", "text/html,application/xhtml+xml")

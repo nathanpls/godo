@@ -9,6 +9,9 @@ possible.
 - [CLI](/cli): persistent local Go services and agent discovery
 - [HTTP](/http): routing, middleware, JSON responses, and WebSockets
 - [HTTP API Keys](/http/plugins/apikey): bearer authentication and key management
+- [Agent API](/http/plugins/agentapi): discovery, OpenAPI, and llms.txt
+- [HTTP Idempotency](/http/plugins/idempotency): retry-safe mutation responses
+- [HTTP Request IDs](/http/plugins/requestid): request correlation IDs
 - [HTTP Rate Limiting](/http/plugins/ratelimit): memory and shared database limits
 - [ORM](/orm): SQLite and PostgreSQL models, migrations, CRUD, and queries
 

@@ -100,6 +100,12 @@ Available plugins:
 
 - [API key authentication](/http/plugins/apikey): hashed bearer keys managed by
   the godo CLI
+- [Agent API discovery](/http/plugins/agentapi): discovery manifest, explicit
+  OpenAPI 3.1 contract, and `llms.txt`
+- [Idempotency](/http/plugins/idempotency): bounded response replay for retry-safe
+  mutations
+- [Request IDs](/http/plugins/requestid): generated or explicitly trusted
+  correlation IDs
 - [Rate limiting](/http/plugins/ratelimit): memory or shared SQLite/PostgreSQL
   fixed-window limits
 
@@ -112,6 +118,38 @@ if err := godohttp.JSON(w, stdhttp.StatusCreated, value); err != nil {
     log.Printf("write response: %v", err)
 }
 ```
+
+### Problem responses
+
+`WriteProblem` writes RFC 9457 `application/problem+json` responses. The title
+defaults to the HTTP status text and the type defaults to `about:blank`:
+
+```go
+_ = godohttp.WriteProblem(w, godohttp.Problem{
+    Status:    stdhttp.StatusBadRequest,
+    Detail:    "limit must be between 1 and 100",
+    RequestID: requestID,
+})
+```
+
+Extensions become additional top-level members. Reserved problem members cannot
+be replaced through `Extensions`.
+
+### Cursor pagination
+
+`ParsePagination` validates singular `limit` and `cursor` query parameters:
+
+```go
+pagination, err := godohttp.ParsePagination(r, 25, 100)
+if err != nil {
+    _ = godohttp.WriteProblem(w, godohttp.Problem{Status: stdhttp.StatusBadRequest, Detail: err.Error()})
+    return
+}
+```
+
+Return collections with `Page[T]`. `EncodeCursor` and `DecodeCursor` provide
+opaque URL-safe JSON cursors; they are not encrypted or signed and must not
+contain secrets.
 
 ## WebSockets
 
