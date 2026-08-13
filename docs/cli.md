@@ -180,7 +180,9 @@ godo agent
 ```
 
 Only content between `<godo>` and `</godo>` is generated. Existing instructions
-outside that block are preserved. A missing block is appended to the file.
+outside that block are preserved. A missing block is appended to the file. The
+generated block also tells agents that the `godo` CLI is available and points
+them to `godo --help` and nested command help.
 
 ## Application contract
 

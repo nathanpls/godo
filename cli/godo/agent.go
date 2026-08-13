@@ -37,7 +37,9 @@ func agentBlock(services []service) string {
 
 	var result strings.Builder
 	result.WriteString(agentBlockStart)
-	result.WriteString("\n## Local godo services\n\n")
+	result.WriteString("\n## godo CLI\n\n")
+	result.WriteString("The `godo` CLI is available for project setup, dependencies, local services, database migrations, and API keys. Run `godo --help` to discover commands and `godo <command> --help` for command-specific guidance.\n\n")
+	result.WriteString("## Local godo services\n\n")
 	if len(services) == 0 {
 		result.WriteString("No local services are currently managed by godo.\n")
 	} else {
