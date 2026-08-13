@@ -17,8 +17,11 @@ Each area lives in a focused top-level package and remains usable independently.
 Install the `godo` command:
 
 ```sh
-go install ./cli/godo
+./cli/install.sh
 ```
+
+The script builds and installs `godo` to `$HOME/.local/bin/godo`. Alternatively,
+use `go install ./cli/godo`.
 
 On Linux, `godo` can build Go programs into persistent `systemd --user`
 services and publish their local URLs to OpenCode agents:

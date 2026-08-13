@@ -16,10 +16,12 @@ through the global OpenCode `AGENTS.md` file.
 From the repository root:
 
 ```sh
-go install ./cli/godo
+./cli/install.sh
 ```
 
-Make sure the Go binary directory, normally `$HOME/go/bin`, is on `PATH`.
+The script builds and installs `godo` to `$HOME/.local/bin/godo`. Make sure
+`$HOME/.local/bin` is on `PATH`. Alternatively, use `go install ./cli/godo` and
+add the Go binary directory, normally `$HOME/go/bin`, to `PATH`.
 
 ## Add a service
 
